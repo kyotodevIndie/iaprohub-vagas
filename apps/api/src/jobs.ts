@@ -145,6 +145,15 @@ export async function recentJobs(db: Db, hours: number, limit = 500) {
   return rows.map((r) => toPublic(r));
 }
 
+/** Vagas que chegaram depois de `since`, mais novas primeiro. */
+export async function jobsSince(db: Db, since: Date, limit = 500) {
+  const { rows } = await db.query<JobRow>(`SELECT ${COLS} FROM job WHERE first_seen_at > $1 ORDER BY first_seen_at DESC LIMIT $2`, [
+    since,
+    limit,
+  ]);
+  return rows.map((r) => toPublic(r));
+}
+
 export async function allJobsForSitemap(db: Db) {
   const { rows } = await db.query<{ slug: string; updated_at: Date }>("SELECT slug, updated_at FROM job ORDER BY id DESC LIMIT 45000");
   return rows;

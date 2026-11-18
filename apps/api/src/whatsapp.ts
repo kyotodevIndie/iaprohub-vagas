@@ -1,10 +1,10 @@
 import type { Db } from "./db";
 import { buildDigest } from "./digest";
 import type { Env } from "./env";
-import { recentJobs } from "./jobs";
+import { jobsSince } from "./jobs";
 
-// Resumo diário no grupo da comunidade pela Evolution API (~/dev/evolution). Uma mensagem por dia, no horário do
-// DIGEST_HOUR (Brasília), só depois que o grupo for escolhido no admin (/admin/resumo).
+// Resumo no grupo da comunidade pela Evolution API (~/dev/evolution). Uma mensagem em cada horário de DIGEST_TIMES
+// (Brasília), só depois que o grupo for escolhido no admin (/admin/resumo).
 
 export interface WhatsApp {
   state(): Promise<string>;
@@ -58,35 +58,50 @@ export async function setSetting(db: Db, key: string, value: string | null) {
 
 const brt = (now: Date) => {
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", hourCycle: "h23" })
+    new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
       .formatToParts(now)
       .map((p) => [p.type, p.value]),
   );
-  return { day: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) };
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
 };
 
+/** Milissegundos até o próximo horário de `times` (HH:MM em Brasília, que não tem horário de verão: UTC-3). */
+export function msUntilNext(times: string[], now = new Date()) {
+  const brtNow = new Date(now.getTime() - 3 * 3600 * 1000);
+  const minutes = brtNow.getUTCHours() * 60 + brtNow.getUTCMinutes();
+  const slots = times.map((t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3)));
+  const next = slots.find((m) => m > minutes) ?? slots[0]! + 24 * 60;
+  return (next - minutes) * 60_000 - brtNow.getUTCSeconds() * 1000 - brtNow.getUTCMilliseconds();
+}
+
 /**
- * Manda o resumo das últimas 24h no grupo escolhido, uma vez por dia, a partir de `hour` (Brasília).
- * Sem vaga nova, registra o dia e não manda nada. Falha no envio fica registrada e não é repetida no mesmo dia.
+ * Manda no grupo escolhido as vagas que chegaram desde o envio anterior (no máximo as últimas 24h), uma vez por
+ * horário de `times` (HH:MM em Brasília). Se o servidor perder um horário, o seguinte leva as vagas dele.
+ * Sem vaga nova, registra o horário e não manda nada. Falha no envio fica registrada e não é repetida no mesmo horário.
  */
-export async function sendDailyDigest(db: Db, wa: WhatsApp, publicUrl: string, hour: number, now = new Date()) {
+export async function sendDigest(db: Db, wa: WhatsApp, publicUrl: string, times: string[], now = new Date()) {
   const t = brt(now);
-  if (t.hour < hour) return null;
+  const time = times.filter((x) => x <= t.time).at(-1);
+  if (!time) return null;
   const group = await getSetting(db, GROUP_SETTING);
   if (!group) return null;
+  const slot = `${t.day} ${time}`;
+  const { rows: prev } = await db.query<{ at: Date | null }>("SELECT max(created_at) AS at FROM wa_digest");
   const claim = await db.query(
-    "INSERT INTO wa_digest (day, group_jid, job_count) VALUES ($1, $2, 0) ON CONFLICT (day) DO NOTHING RETURNING day",
-    [t.day, group],
+    "INSERT INTO wa_digest (slot, group_jid, job_count) VALUES ($1, $2, 0) ON CONFLICT (slot) DO NOTHING RETURNING slot",
+    [slot, group],
   );
   if (!claim.rowCount) return null;
-  const jobs = await recentJobs(db, 24);
-  if (!jobs.length) return { day: t.day, count: 0 };
+  const dayAgo = new Date(now.getTime() - 24 * 3600 * 1000);
+  const since = prev[0]?.at && prev[0].at > dayAgo ? prev[0].at : dayAgo;
+  const jobs = await jobsSince(db, since);
+  if (!jobs.length) return { slot, count: 0 };
   try {
     await wa.sendText(group, buildDigest(jobs, publicUrl, now));
-    await db.query("UPDATE wa_digest SET job_count = $2, sent_at = now() WHERE day = $1", [t.day, jobs.length]);
-    return { day: t.day, count: jobs.length };
+    await db.query("UPDATE wa_digest SET job_count = $2, sent_at = now() WHERE slot = $1", [slot, jobs.length]);
+    return { slot, count: jobs.length };
   } catch (err) {
-    await db.query("UPDATE wa_digest SET job_count = $2, error = $3 WHERE day = $1", [t.day, jobs.length, (err as Error).message.slice(0, 300)]);
+    await db.query("UPDATE wa_digest SET job_count = $2, error = $3 WHERE slot = $1", [slot, jobs.length, (err as Error).message.slice(0, 300)]);
     throw err;
   }
 }

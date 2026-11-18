@@ -47,4 +47,4 @@ Precisa no `stack.env`: `RESEND_API_KEY` e `EMAIL_FROM` (login e envios) e `NOX_
 
 ## Resumo automático no WhatsApp
 
-Com `EVOLUTION_URL` e `EVOLUTION_API_KEY` no `stack.env` (Evolution em `~/dev/evolution`, instância `iapro`), o resumo das últimas 24h sai uma vez por dia a partir de `DIGEST_HOUR` (9h de Brasília) no grupo escolhido em `/admin/resumo`. Sem grupo escolhido, nada é enviado. A mesma tela tem o botão "Enviar agora".
+Com `EVOLUTION_URL` e `EVOLUTION_API_KEY` no `stack.env` (Evolution em `~/dev/evolution`, instância `iapro`), o resumo sai nos horários de `DIGEST_TIMES` (padrão 9h10, 12h10 e 17h10 de Brasília, 10 min depois de cada rodada do agente) no grupo escolhido em `/admin/resumo`, com as vagas que chegaram desde o envio anterior. Sem grupo escolhido, nada é enviado. A mesma tela tem o botão "Enviar agora".

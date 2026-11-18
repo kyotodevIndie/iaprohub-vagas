@@ -48,10 +48,10 @@ interface WaInfo {
   enabled: boolean;
   state?: string;
   error?: string;
-  hour?: number;
+  times?: string[];
   groupJid: string | null;
   groups: { id: string; subject: string; size: number | null }[];
-  sends: { day: string; count: number; sentAt: string | null; error: string | null }[];
+  sends: { slot: string; count: number; sentAt: string | null; error: string | null }[];
 }
 const wa = ref<WaInfo | null>(null);
 const waGroup = ref("nenhum");
@@ -140,7 +140,7 @@ onMounted(load);
     <template v-else>
       <p class="text-sm text-muted-foreground">
         Conexão: <b :class="wa.state === 'open' ? 'text-primary' : 'text-destructive'">{{ wa.state === "open" ? "conectado" : wa.state }}</b>.
-        O resumo das últimas 24h sai uma vez por dia, a partir das {{ wa.hour ?? 9 }}h, no grupo escolhido. Dia sem vaga nova não manda nada.
+        O resumo sai às {{ (wa.times ?? []).map((t) => t.replace(":", "h")).join(", ") }} no grupo escolhido, com as vagas que chegaram desde o envio anterior. Horário sem vaga nova não manda nada.
       </p>
       <p v-if="wa.error" class="text-sm text-destructive">{{ wa.error }}</p>
       <div class="flex flex-wrap items-center gap-2">
@@ -157,8 +157,8 @@ onMounted(load);
       <p v-if="!wa.groups.length && !wa.error" class="text-sm text-muted-foreground">O número ainda não está em nenhum grupo. Adicione ele no grupo da comunidade e recarregue.</p>
       <p v-if="waMsg" class="text-sm">{{ waMsg }}</p>
       <ul v-if="wa.sends.length" class="text-sm text-muted-foreground">
-        <li v-for="s in wa.sends" :key="s.day">
-          {{ s.day }}: {{ s.error ? `falhou (${s.error})` : s.sentAt ? `${s.count} vagas enviadas` : "sem vagas novas" }}
+        <li v-for="s in wa.sends" :key="s.slot">
+          {{ s.slot }}: {{ s.error ? `falhou (${s.error})` : s.sentAt ? `${s.count} vagas enviadas` : "sem vagas novas" }}
         </li>
       </ul>
     </template>
