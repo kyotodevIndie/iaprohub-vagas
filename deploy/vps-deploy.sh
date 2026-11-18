@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Deploy: builda a imagem aqui, manda por SSH (docker save | load) e recria a stack "iaprohub-vagas".
-# Na primeira vez cria <servidor>:/opt/iaprohub-vagas/stack.env com segredos novos. As migrations rodam no boot do app.
+# Na primeira vez cria <servidor>:/home/deploy/iaprohub-vagas/stack.env com segredos novos. As migrations rodam no boot do app.
 # Uso: VAGAS_HOST=saas-vps bash deploy/vps-deploy.sh
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 HOST="${VAGAS_HOST:-saas-vps}"
-DIR=${VAGAS_DIR:-/opt/iaprohub-vagas}
+# /opt é do root nesta VPS e o usuário deploy não tem sudo; por isso a stack mora na home dele.
+DIR=${VAGAS_DIR:-/home/deploy/iaprohub-vagas}
 DOMAIN=${VAGAS_DOMAIN:-iaprohub.vagas.aurora-saas.com.br}
 SHA="$(git rev-parse --short HEAD)"
 [ -z "$(git status --porcelain)" ] || { echo "Há mudanças não commitadas; commite antes." >&2; exit 1; }

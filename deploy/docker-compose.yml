@@ -1,5 +1,5 @@
 # Produção (stack "iaprohub-vagas"): Postgres próprio, o app (API + site) e o backup diário.
-# Variáveis em <servidor>:/opt/iaprohub-vagas/stack.env (chmod 600), nunca no git. Imagem enviada por SSH (deploy/vps-deploy.sh).
+# Variáveis em <servidor>:/home/deploy/iaprohub-vagas/stack.env (chmod 600), nunca no git. Imagem enviada por SSH (deploy/vps-deploy.sh).
 name: iaprohub-vagas
 
 services:
@@ -42,7 +42,7 @@ services:
       timeout: 3s
       retries: 10
 
-  # Dump diário em /opt/iaprohub-vagas/backups (guarda 14).
+  # Dump diário em /home/deploy/iaprohub-vagas/backups (guarda 14).
   backup:
     image: postgres:16-alpine
     restart: unless-stopped

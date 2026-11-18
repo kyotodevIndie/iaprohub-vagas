@@ -33,4 +33,4 @@ pnpm test
 bash deploy/vps-deploy.sh
 ```
 
-Builda a imagem localmente, envia para `saas-vps` por SSH e sobe a stack em `/opt/iaprohub-vagas`. Na primeira vez, o script cria o `stack.env` com segredos novos (incluindo o `ADMIN_TOKEN`).
+Builda a imagem localmente, envia para `saas-vps` por SSH e sobe a stack em `/home/deploy/iaprohub-vagas`. Na primeira vez, o script cria o `stack.env` com segredos novos (incluindo o `ADMIN_TOKEN`).
