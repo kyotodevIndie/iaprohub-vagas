@@ -1,4 +1,4 @@
-# iaprohub vagas
+# IAPro Vagas
 
 Hub de vagas de tecnologia da comunidade iaprohub: https://iaprohub.vagas.aurora-saas.com.br
 

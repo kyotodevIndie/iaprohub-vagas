@@ -1,4 +1,4 @@
-# API de ingestão: iaprohub vagas
+# API de ingestão: IAPro Vagas
 
 Endereço: `https://iaprohub.vagas.aurora-saas.com.br`
 

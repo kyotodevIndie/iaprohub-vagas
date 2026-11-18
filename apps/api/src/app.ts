@@ -20,8 +20,8 @@ declare module "fastify" {
   }
 }
 
-const SITE_NAME = "iaprohub vagas";
-const SITE_DESCRIPTION = "Vagas de tecnologia publicadas nos últimos dias, atualizadas todo dia, para a comunidade iaprohub.";
+const SITE_NAME = "IAPro Vagas";
+const SITE_DESCRIPTION = "Vagas de tecnologia publicadas nos últimos dias, atualizadas todo dia, para a comunidade IAPro.";
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers.authorization;

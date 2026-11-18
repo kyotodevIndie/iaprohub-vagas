@@ -58,6 +58,8 @@ export function renderShell(html: string, m: PageMeta): string {
     `<meta property="og:description" content="${esc(m.description)}">`,
     `<meta property="og:url" content="${esc(m.canonical)}">`,
     `<meta property="og:type" content="website">`,
+    `<meta property="og:image" content="${esc(new URL("/og.jpg", m.canonical).toString())}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
     m.noindex ? `<meta name="robots" content="noindex">` : "",
     m.jsonLd ? `<script type="application/ld+json">${scriptJson(m.jsonLd)}</script>` : "",
   ].filter(Boolean);

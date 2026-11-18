@@ -2,8 +2,8 @@
   <header class="border-b border-border">
     <div class="mx-auto flex h-16 max-w-6xl items-center px-4">
       <RouterLink to="/" class="inline-flex items-center gap-2.5 text-lg no-underline">
-        <img src="/favicon.svg" alt="" width="28" height="28" />
-        <span>iaprohub <b class="text-primary">vagas</b></span>
+        <img src="/logo-96.png" alt="" width="40" height="40" />
+        <span class="font-semibold tracking-tight">IAPro <b class="text-primary">Vagas</b></span>
       </RouterLink>
     </div>
   </header>

@@ -92,7 +92,7 @@ describe.skipIf(!available)("API", () => {
     const page = await app.inject({ url: `/vagas/${j.slug}` });
     expect(page.statusCode).toBe(200);
     expect(page.body).toContain('"@type":"JobPosting"');
-    expect(page.body).toContain("<title>Dev Back-end 1 (novo) · Acme | iaprohub vagas</title>");
+    expect(page.body).toContain("<title>Dev Back-end 1 (novo) · Acme | IAPro Vagas</title>");
     expect((await app.inject({ url: "/vagas/nao-existe-abc" })).statusCode).toBe(410);
     expect((await app.inject({ url: "/sitemap.xml" })).body).toContain(`/vagas/${j.slug}`);
     expect((await app.inject({ url: "/admin/resumo" })).statusCode).toBe(200);

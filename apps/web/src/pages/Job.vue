@@ -18,7 +18,7 @@ watch(
     try {
       job.value = await fetchJob(codeFromSlug(slug));
       state.value = "ok";
-      document.title = `${job.value.title}${job.value.company ? ` · ${job.value.company}` : ""} | iaprohub vagas`;
+      document.title = `${job.value.title}${job.value.company ? ` · ${job.value.company}` : ""} | IAPro Vagas`;
     } catch (err) {
       state.value = (err as { status?: number }).status === 404 ? "gone" : "error";
     }
