@@ -51,6 +51,7 @@ export const jobInput = z
       .refine((s) => s.min === undefined || s.max === undefined || s.min <= s.max, "salary.min maior que salary.max")
       .optional(),
     applyUrl: httpUrl,
+    applyEmail: z.email().max(200).toLowerCase().optional(),
     publishedAt: z.iso.datetime({ offset: true }).optional(),
   })
   .refine((j) => j.source.externalId || j.source.url, { message: "mande source.externalId ou source.url", path: ["source"] });
@@ -86,8 +87,8 @@ export async function ingestJobs(db: Db, clientId: number, items: unknown[], pub
     const { rows } = await db.query<{ code: string; slug: string; inserted: boolean }>(
       `INSERT INTO job (code, slug, client_id, source_kind, source_key, external_id, source_url, title, company_name,
          company_website, description, seniority, workplace, regime, stack, location, salary_min, salary_max,
-         salary_currency, salary_period, salary_text, apply_url, search_text, published_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+         salary_currency, salary_period, salary_text, apply_url, search_text, published_at, apply_email)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
        ON CONFLICT (source_kind, external_id) DO UPDATE SET
          source_key = EXCLUDED.source_key, source_url = EXCLUDED.source_url, title = EXCLUDED.title,
          company_name = EXCLUDED.company_name, company_website = EXCLUDED.company_website,
@@ -96,7 +97,8 @@ export async function ingestJobs(db: Db, clientId: number, items: unknown[], pub
          salary_min = EXCLUDED.salary_min, salary_max = EXCLUDED.salary_max,
          salary_currency = EXCLUDED.salary_currency, salary_period = EXCLUDED.salary_period,
          salary_text = EXCLUDED.salary_text, apply_url = EXCLUDED.apply_url,
-         search_text = EXCLUDED.search_text, published_at = EXCLUDED.published_at, updated_at = now()
+         search_text = EXCLUDED.search_text, published_at = EXCLUDED.published_at,
+         apply_email = EXCLUDED.apply_email, updated_at = now()
        RETURNING code, slug, (xmax = 0) AS inserted`,
       [
         code,
@@ -123,6 +125,7 @@ export async function ingestJobs(db: Db, clientId: number, items: unknown[], pub
         j.applyUrl,
         searchText(j),
         j.publishedAt ?? null,
+        j.applyEmail ?? null,
       ],
     );
     const row = rows[0]!;

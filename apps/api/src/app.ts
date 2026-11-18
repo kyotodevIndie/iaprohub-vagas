@@ -5,12 +5,14 @@ import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import { z } from "zod";
+import { accountRoutes } from "./account";
 import { createClient, findClientByToken } from "./clients";
 import type { Db } from "./db";
 import { buildDigest } from "./digest";
 import type { Env } from "./env";
 import { closeJobs, ingestBody, ingestJobs } from "./ingest";
 import { allJobsForSitemap, getJob, listJobs, recentJobs } from "./jobs";
+import { createMailer, type Mailer } from "./mail";
 import { jobDescriptionSnippet, jobPostingLd, renderShell, sitemapXml } from "./seo";
 import { LABELS, VOCAB } from "./vocab";
 
@@ -33,9 +35,10 @@ function sameSecret(a: string, b: string) {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
-export async function buildApp(db: Db, env: Env) {
+export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer } = {}) {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" }, trustProxy: true });
   await app.register(rateLimit, { global: false });
+  const mailer = opts.mailer ?? createMailer(env, (m) => app.log.info(m));
 
   const requireClient = async (req: FastifyRequest, reply: FastifyReply) => {
     const token = bearer(req);
@@ -126,6 +129,8 @@ export async function buildApp(db: Db, env: Env) {
     const { rowCount } = await db.query("UPDATE ad SET active = false WHERE id = $1", [Number((req.params as { id: string }).id) || 0]);
     return { disabled: rowCount ?? 0 };
   });
+
+  await accountRoutes(app, db, env, mailer, requireAdmin);
 
   // ---- API pública (site) ----
   const listQuery = z.object({

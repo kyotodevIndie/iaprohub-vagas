@@ -20,6 +20,20 @@ export const env = {
   adminToken: required("ADMIN_TOKEN"),
   webDist: process.env.WEB_DIST || null,
   adsense: adsense(process.env.ADSENSE_CLIENT, process.env.ADSENSE_SLOT),
+  // E-mail transacional pelo Resend. Sem chave, o código de login só aparece no log (desenvolvimento).
+  email: process.env.RESEND_API_KEY && process.env.EMAIL_FROM
+    ? { apiKey: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM, apiUrl: process.env.RESEND_API_URL ?? "https://api.resend.com" }
+    : null,
+  // Cobrança do Pro pelo Nox (~/dev/nox/docs/API.md). Sem as três variáveis, o botão de assinar responde 503.
+  nox: process.env.NOX_URL && process.env.NOX_CLIENT_ID && process.env.NOX_SECRET
+    ? {
+        url: process.env.NOX_URL.replace(/\/+$/, ""),
+        clientId: process.env.NOX_CLIENT_ID,
+        secret: process.env.NOX_SECRET,
+        product: process.env.NOX_PRODUCT ?? "iaprohub-vagas",
+        plan: process.env.NOX_PLAN ?? "pro",
+      }
+    : null,
 };
 
 export type Env = typeof env;
