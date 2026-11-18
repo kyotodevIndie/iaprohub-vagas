@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { ago, codeFromSlug, fetchJob, label, type Job } from "../api";
+import { ArrowUpRight } from "@lucide/vue";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ago, codeFromSlug, fetchJob, label, type Job } from "@/api";
 
 const route = useRoute();
 const job = ref<Job | null>(null);
@@ -39,86 +43,47 @@ const expires = computed(() =>
 </script>
 
 <template>
-  <RouterLink to="/" class="back muted">← Todas as vagas</RouterLink>
+  <RouterLink to="/" class="mb-5 inline-block text-sm text-muted-foreground no-underline hover:text-foreground">← Todas as vagas</RouterLink>
 
-  <p v-if="state === 'loading'" class="muted">Carregando...</p>
+  <p v-if="state === 'loading'" class="text-muted-foreground">Carregando...</p>
 
-  <div v-else-if="state === 'gone'" class="box">
-    <h1>Esta vaga não está mais no ar</h1>
-    <p class="muted">As vagas ficam disponíveis por 3 semanas ou até fecharem na empresa.</p>
-    <RouterLink to="/" class="btn">Ver vagas abertas</RouterLink>
+  <div v-else-if="state === 'gone'" class="space-y-3 py-10">
+    <h1 class="text-2xl font-bold">Esta vaga não está mais no ar</h1>
+    <p class="text-muted-foreground">As vagas ficam disponíveis por 3 semanas ou até fecharem na empresa.</p>
+    <Button as-child><RouterLink to="/" class="no-underline">Ver vagas abertas</RouterLink></Button>
   </div>
 
-  <p v-else-if="state === 'error'" class="muted">Não deu para carregar a vaga. Tente de novo em instantes.</p>
+  <p v-else-if="state === 'error'" class="text-muted-foreground">Não deu para carregar a vaga. Tente de novo em instantes.</p>
 
-  <article v-else-if="job" class="layout">
-    <div class="main">
-      <h1>{{ job.title }}</h1>
-      <p v-if="job.company" class="company">
-        <a v-if="job.companyWebsite" :href="job.companyWebsite" target="_blank" rel="noopener nofollow">{{ job.company }}</a>
+  <article v-else-if="job" class="grid items-start gap-8 md:grid-cols-[minmax(0,1fr)_300px]">
+    <div class="min-w-0">
+      <h1 class="break-words text-2xl font-bold leading-tight tracking-tight sm:text-3xl">{{ job.title }}</h1>
+      <p v-if="job.company" class="mb-4 mt-1.5 text-base text-foreground/90">
+        <a v-if="job.companyWebsite" :href="job.companyWebsite" target="_blank" rel="noopener nofollow" class="text-primary no-underline hover:underline">{{ job.company }}</a>
         <template v-else>{{ job.company }}</template>
       </p>
-      <div class="chips">
-        <span v-for="w in job.workplace" :key="w" class="chip">{{ label(w) }}</span>
-        <span v-if="job.location" class="chip">{{ job.location }}</span>
-        <span v-for="s in job.seniority" :key="s" class="chip">{{ label(s) }}</span>
-        <span v-for="r in job.regime" :key="r" class="chip">{{ label(r) }}</span>
-        <span v-if="job.salary" class="chip money">{{ job.salary }}</span>
+      <div class="flex flex-wrap gap-1.5">
+        <Badge v-for="w in job.workplace" :key="w" variant="secondary" class="font-medium shadow-none">{{ label(w) }}</Badge>
+        <Badge v-if="job.location" variant="secondary" class="font-medium shadow-none">{{ job.location }}</Badge>
+        <Badge v-for="s in job.seniority" :key="s" variant="secondary" class="font-medium shadow-none">{{ label(s) }}</Badge>
+        <Badge v-for="r in job.regime" :key="r" variant="secondary" class="font-medium shadow-none">{{ label(r) }}</Badge>
+        <Badge v-if="job.salary" variant="outline" class="font-medium">{{ job.salary }}</Badge>
       </div>
-      <div v-if="job.stack.length" class="stack">
-        <span v-for="t in job.stack" :key="t" class="tag">{{ t }}</span>
+      <div v-if="job.stack.length" class="mt-3 flex flex-wrap gap-1.5">
+        <span v-for="t in job.stack" :key="t" class="rounded-sm border border-border px-2 py-0.5 text-xs text-muted-foreground">{{ t }}</span>
       </div>
-      <div v-if="job.description" class="desc">{{ job.description }}</div>
+      <div v-if="job.description" class="mt-6 whitespace-pre-line break-words border-t border-border pt-5 leading-relaxed text-foreground/85">{{ job.description }}</div>
     </div>
 
-    <aside class="side">
-      <a :href="applyHref" class="btn apply" target="_blank" rel="noopener nofollow">Candidatar-se no site da empresa ↗</a>
-      <dl>
-        <dt>Publicada</dt><dd>{{ ago(job.publishedAt) }}</dd>
-        <dt>Fica no ar até</dt><dd>{{ expires }}</dd>
-        <dt>Fonte</dt><dd>{{ job.source }}</dd>
+    <Card class="order-first p-5 shadow-none md:order-none md:sticky md:top-5">
+      <Button as-child size="lg" class="w-full px-4">
+        <a :href="applyHref" target="_blank" rel="noopener nofollow" class="no-underline">Candidatar-se no site da empresa <ArrowUpRight /></a>
+      </Button>
+      <dl class="mt-5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
+        <dt class="text-muted-foreground">Publicada</dt><dd class="text-right">{{ ago(job.publishedAt) }}</dd>
+        <dt class="text-muted-foreground">Fica no ar até</dt><dd class="text-right">{{ expires }}</dd>
+        <dt class="text-muted-foreground">Fonte</dt><dd class="text-right">{{ job.source }}</dd>
       </dl>
-    </aside>
+    </Card>
   </article>
 </template>
-
-<style scoped>
-.back { display: inline-block; margin-bottom: 20px; text-decoration: none; font-size: 14px; }
-.back:hover { color: var(--text); }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
-h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; overflow-wrap: anywhere; }
-.company { margin: 0 0 14px; font-size: 16px; opacity: .9; }
-.company a { color: var(--accent); text-decoration: none; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.tag { font-size: 12.5px; padding: 2px 9px; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); }
-.desc {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  color: #d9dbe7;
-  line-height: 1.65;
-}
-.side {
-  position: sticky;
-  top: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-.apply { width: 100%; text-align: center; }
-dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 18px 0 0; font-size: 14px; }
-dt { color: var(--faint); }
-dd { margin: 0; text-align: right; }
-.box { padding: 40px 0; }
-.box h1 { font-size: 24px; }
-.box .btn { margin-top: 16px; }
-@media (max-width: 820px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
-  .side { position: static; order: -1; }
-  h1 { font-size: 23px; }
-}
-</style>

@@ -77,3 +77,12 @@ Resposta: um resultado por vaga, na mesma ordem.
 
 - `GET /api/v1/admin/digest?hours=24` (Bearer admin): texto do resumo para o WhatsApp. O mesmo resumo aparece na tela `/admin/resumo`.
 - `DELETE /api/v1/admin/jobs/:id` (Bearer admin): apaga uma vaga.
+
+## Anúncios
+
+Aparecem na lista como um card "Patrocinado" (borda tracejada, mesmo tamanho de um card de vaga) a cada 12 vagas. Quando há mais de um anúncio ativo, eles se revezam. Sem anúncio ativo, nada aparece.
+
+- `POST /api/v1/admin/ads` (Bearer admin), corpo `{ "title": "...", "url": "https://...", "text": "opcional, até 200", "cta": "opcional, ex.: Conhecer o curso", "endsAt": "opcional, ISO 8601" }`
+- `GET /api/v1/admin/ads` (Bearer admin): lista todos.
+- `DELETE /api/v1/admin/ads/:id` (Bearer admin): desliga o anúncio.
+- `GET /api/v1/ads`: os anúncios ativos, usados pelo site.

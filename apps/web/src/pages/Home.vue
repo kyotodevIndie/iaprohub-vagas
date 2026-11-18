@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import JobCard from "../components/JobCard.vue";
-import { fetchJobs, type Job } from "../api";
+import { Search } from "@lucide/vue";
+import AdCard from "@/components/AdCard.vue";
+import JobCard from "@/components/JobCard.vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { fetchAds, fetchJobs, type Ad, type Job } from "@/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -10,24 +16,37 @@ const one = (v: unknown) => (typeof v === "string" ? v : "");
 
 const filters = reactive({
   q: one(route.query.q),
-  workplace: one(route.query.workplace),
+  workplace: one(route.query.workplace) || "todos",
   seniority: one(route.query.seniority),
   salary: route.query.salary === "1",
 });
 
 const jobs = ref<Job[]>([]);
+const ads = ref<Ad[]>([]);
 const total = ref(0);
 const page = ref(1);
 const loading = ref(false);
 const failed = ref(false);
 
-const WORKPLACES: [string, string][] = [["", "Todos os modelos"], ["remoto", "Remoto"], ["hibrido", "Híbrido"], ["presencial", "Presencial"]];
+const WORKPLACES: [string, string][] = [["todos", "Todos os modelos"], ["remoto", "Remoto"], ["hibrido", "Híbrido"], ["presencial", "Presencial"]];
 const SENIORITIES: [string, string][] = [["estagio", "Estágio"], ["junior", "Júnior"], ["pleno", "Pleno"], ["senior", "Sênior"], ["especialista", "Especialista"], ["lideranca", "Liderança"]];
+const AD_EVERY = 12;
+
+/** Vagas com um anúncio a cada 12 cards (nenhum se não houver anúncio ativo). */
+const feed = computed(() => {
+  const out: ({ kind: "job"; job: Job } | { kind: "ad"; ad: Ad; key: string })[] = [];
+  jobs.value.forEach((job, i) => {
+    out.push({ kind: "job", job });
+    const n = (i + 1) / AD_EVERY;
+    if (ads.value.length && Number.isInteger(n)) out.push({ kind: "ad", ad: ads.value[(n - 1) % ads.value.length]!, key: `ad-${n}` });
+  });
+  return out;
+});
 
 function params(p: number) {
   const s = new URLSearchParams();
   if (filters.q.trim()) s.set("q", filters.q.trim());
-  if (filters.workplace) s.set("workplace", filters.workplace);
+  if (filters.workplace !== "todos") s.set("workplace", filters.workplace);
   if (filters.seniority) s.set("seniority", filters.seniority);
   if (filters.salary) s.set("salary", "1");
   if (p > 1) s.set("page", String(p));
@@ -63,87 +82,65 @@ watch(filters, () => {
 });
 
 const toggleSeniority = (s: string) => (filters.seniority = filters.seniority === s ? "" : s);
+const pill = (on: boolean) =>
+  cn("rounded-full border-border px-3.5 font-normal text-muted-foreground shadow-none", on && "border-primary bg-primary font-semibold text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground");
 
-onMounted(() => load(true));
+onMounted(() => {
+  load(true);
+  fetchAds().then((a) => (ads.value = a), () => {});
+});
 </script>
 
 <template>
   <section>
-    <div class="head">
-      <h1>Vagas abertas</h1>
-      <span v-if="total" class="muted count">{{ total }} {{ total === 1 ? "vaga" : "vagas" }}</span>
+    <div class="mb-5 flex items-baseline gap-3">
+      <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Vagas abertas</h1>
+      <span v-if="total" class="text-sm text-muted-foreground">{{ total }} {{ total === 1 ? "vaga" : "vagas" }}</span>
     </div>
 
-    <div class="search">
-      <label class="q field">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
-        </svg>
-        <input v-model="filters.q" type="search" placeholder="Buscar por cargo, empresa ou stack..." aria-label="Buscar vagas" />
-      </label>
-      <select v-model="filters.workplace" class="field" aria-label="Modelo de trabalho">
-        <option v-for="[v, l] in WORKPLACES" :key="v" :value="v">{{ l }}</option>
-      </select>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input v-model="filters.q" type="search" class="h-control-lg bg-card pl-9" placeholder="Buscar por cargo, empresa ou stack..." aria-label="Buscar vagas" />
+      </div>
+      <Select v-model="filters.workplace">
+        <SelectTrigger class="h-control-lg bg-card sm:w-52" aria-label="Modelo de trabalho">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="[v, l] in WORKPLACES" :key="v" :value="v">{{ l }}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
-    <div class="filters">
-      <button
+    <div class="mb-6 mt-4 flex flex-wrap gap-2">
+      <Button
         v-for="[v, l] in SENIORITIES"
         :key="v"
-        type="button"
-        class="pill"
-        :class="{ on: filters.seniority === v }"
+        variant="outline"
+        size="sm"
+        :class="pill(filters.seniority === v)"
         :aria-pressed="filters.seniority === v"
         @click="toggleSeniority(v)"
-      >{{ l }}</button>
-      <button type="button" class="pill" :class="{ on: filters.salary }" :aria-pressed="filters.salary" @click="filters.salary = !filters.salary">
+      >{{ l }}</Button>
+      <Button variant="outline" size="sm" :class="pill(filters.salary)" :aria-pressed="filters.salary" @click="filters.salary = !filters.salary">
         Com salário
-      </button>
+      </Button>
     </div>
 
-    <div v-if="jobs.length" class="grid">
-      <JobCard v-for="j in jobs" :key="j.code" :job="j" />
+    <div v-if="jobs.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <template v-for="item in feed" :key="item.kind === 'job' ? item.job.code : item.key">
+        <JobCard v-if="item.kind === 'job'" :job="item.job" />
+        <AdCard v-else :ad="item.ad" />
+      </template>
     </div>
-    <p v-else-if="failed" class="empty">Não deu para carregar as vagas agora. Tente de novo em instantes.</p>
-    <p v-else-if="!loading" class="empty">Nenhuma vaga com esses filtros.</p>
+    <p v-else-if="failed" class="py-10 text-center text-muted-foreground">Não deu para carregar as vagas agora. Tente de novo em instantes.</p>
+    <p v-else-if="!loading" class="py-10 text-center text-muted-foreground">Nenhuma vaga com esses filtros.</p>
 
-    <div v-if="jobs.length < total" class="more">
-      <button class="btn ghost" type="button" :disabled="loading" @click="load(false)">
+    <div v-if="jobs.length < total" class="mt-8 flex justify-center">
+      <Button variant="outline" size="lg" :disabled="loading" @click="load(false)">
         {{ loading ? "Carregando..." : "Carregar mais vagas" }}
-      </button>
+      </Button>
     </div>
   </section>
 </template>
-
-<style scoped>
-.head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
-h1 { font-size: 26px; font-weight: 700; margin: 0; }
-.count { font-size: 14px; }
-.search { display: flex; gap: 12px; }
-.q { flex: 1; display: flex; align-items: center; gap: 10px; color: var(--faint); min-width: 0; }
-.q input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--text); }
-.q:focus-within { border-color: var(--accent); }
-select.field { min-width: 180px; cursor: pointer; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px; }
-.pill {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13.5px;
-  cursor: pointer;
-}
-.pill:hover { border-color: var(--border-strong); color: var(--text); }
-.pill.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.empty { color: var(--muted); padding: 40px 0; text-align: center; }
-.more { display: flex; justify-content: center; margin-top: 28px; }
-@media (max-width: 960px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) {
-  .grid { grid-template-columns: minmax(0, 1fr); }
-  .search { flex-direction: column; }
-  select.field { min-width: 0; }
-  h1 { font-size: 22px; }
-}
-</style>

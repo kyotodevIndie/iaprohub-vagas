@@ -1,25 +1,16 @@
 <template>
-  <header class="top">
-    <div class="container bar">
-      <RouterLink to="/" class="brand">
+  <header class="border-b border-border">
+    <div class="mx-auto flex h-16 max-w-6xl items-center px-4">
+      <RouterLink to="/" class="inline-flex items-center gap-2.5 text-lg no-underline">
         <img src="/favicon.svg" alt="" width="28" height="28" />
-        <span>iaprohub <b>vagas</b></span>
+        <span>iaprohub <b class="text-primary">vagas</b></span>
       </RouterLink>
     </div>
   </header>
-  <main class="container">
+  <main class="mx-auto min-h-[70vh] max-w-6xl px-4 pb-12 pt-8">
     <RouterView />
   </main>
-  <footer class="container foot muted">
+  <footer class="mx-auto max-w-6xl border-t border-border px-4 pb-8 pt-5 text-sm text-muted-foreground">
     Vagas de tecnologia publicadas nos últimos dias. Cada vaga fica no ar por 3 semanas. A candidatura é feita no site da empresa.
   </footer>
 </template>
-
-<style scoped>
-.top { border-bottom: 1px solid var(--border); }
-.bar { display: flex; align-items: center; height: 60px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-size: 17px; }
-.brand b { color: var(--accent); }
-main { padding-top: 28px; padding-bottom: 48px; min-height: 70vh; }
-.foot { border-top: 1px solid var(--border); padding-top: 20px; padding-bottom: 32px; font-size: 13px; }
-</style>

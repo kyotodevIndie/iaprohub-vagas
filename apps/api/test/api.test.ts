@@ -103,6 +103,16 @@ describe.skipIf(!available)("API", () => {
     expect(digest.text).toContain(`👉 https://site.test/v/${j.code}`);
   });
 
+  it("anúncios: só admin cria, a rota pública lista os ativos", async () => {
+    const admin = { authorization: `Bearer ${ADMIN}` };
+    expect((await app.inject({ method: "POST", url: "/api/v1/admin/ads", payload: { title: "x", url: "https://x.com" } })).statusCode).toBe(401);
+    const created = await app.inject({ method: "POST", url: "/api/v1/admin/ads", headers: admin, payload: { title: "Curso X", text: "Aprenda Y", url: "https://x.com" } });
+    expect(created.statusCode).toBe(200);
+    expect((await app.inject({ url: "/api/v1/ads" })).json().ads).toEqual([{ id: created.json().id, title: "Curso X", text: "Aprenda Y", cta: null, url: "https://x.com" }]);
+    await app.inject({ method: "DELETE", url: `/api/v1/admin/ads/${created.json().id}`, headers: admin });
+    expect((await app.inject({ url: "/api/v1/ads" })).json().ads).toEqual([]);
+  });
+
   it("fecha e expira", async () => {
     const auth = { authorization: `Bearer ${token}` };
     const closed = await app.inject({ method: "POST", url: "/api/v1/ingest/jobs/close", headers: auth, payload: { source: { kind: "greenhouse" }, externalIds: ["2"] } });

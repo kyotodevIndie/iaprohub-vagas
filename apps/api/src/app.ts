@@ -99,6 +99,34 @@ export async function buildApp(db: Db, env: Env) {
     return { deleted: rowCount ?? 0 };
   });
 
+  const adBody = z.object({
+    title: z.string().trim().min(1).max(80),
+    text: z.string().trim().max(200).optional(),
+    cta: z.string().trim().max(30).optional(),
+    url: z.url({ protocol: /^https?$/ }),
+    endsAt: z.iso.datetime({ offset: true }).optional(),
+  });
+  app.post("/api/v1/admin/ads", { preHandler: requireAdmin }, async (req, reply) => {
+    const body = adBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: "mande { title, url } (text, cta e endsAt são opcionais)" });
+    const { title, text, cta, url, endsAt } = body.data;
+    const { rows } = await db.query(
+      "INSERT INTO ad (title, text, cta, url, ends_at) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+      [title, text ?? null, cta ?? null, url, endsAt ?? null],
+    );
+    return rows[0];
+  });
+
+  app.get("/api/v1/admin/ads", { preHandler: requireAdmin }, async () => {
+    const { rows } = await db.query(`SELECT id, title, text, cta, url, active, ends_at AS "endsAt" FROM ad ORDER BY id DESC`);
+    return { ads: rows };
+  });
+
+  app.delete("/api/v1/admin/ads/:id", { preHandler: requireAdmin }, async (req) => {
+    const { rowCount } = await db.query("UPDATE ad SET active = false WHERE id = $1", [Number((req.params as { id: string }).id) || 0]);
+    return { disabled: rowCount ?? 0 };
+  });
+
   // ---- API pública (site) ----
   const listQuery = z.object({
     q: z.string().max(100).optional(),
@@ -113,6 +141,15 @@ export async function buildApp(db: Db, env: Env) {
     if (!q.success) return reply.code(400).send({ error: "filtro inválido" });
     reply.header("cache-control", "public, max-age=30");
     return listJobs(db, { ...q.data, salary: !!q.data.salary, pageSize: 24 });
+  });
+
+  app.get("/api/v1/ads", async (_req, reply) => {
+    const { rows } = await db.query(
+      `SELECT id, title, text, cta, url FROM ad
+       WHERE active AND starts_at <= now() AND (ends_at IS NULL OR ends_at > now()) ORDER BY id`,
+    );
+    reply.header("cache-control", "public, max-age=300");
+    return { ads: rows };
   });
 
   app.get("/api/v1/jobs/:code", async (req, reply) => {

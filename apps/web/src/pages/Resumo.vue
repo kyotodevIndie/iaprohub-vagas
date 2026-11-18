@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { fetchDigest } from "../api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { fetchDigest } from "@/api";
 
 const KEY = "iaprohub-vagas:admin-token";
 const read = () => {
@@ -12,7 +15,7 @@ const read = () => {
 };
 
 const token = ref(read());
-const hours = ref(24);
+const hours = ref("24");
 const text = ref("");
 const count = ref(0);
 const error = ref("");
@@ -24,7 +27,7 @@ async function load() {
   loading.value = true;
   error.value = "";
   try {
-    const d = await fetchDigest(token.value, hours.value);
+    const d = await fetchDigest(token.value, Number(hours.value));
     text.value = d.text;
     count.value = d.count;
     try {
@@ -49,35 +52,34 @@ onMounted(load);
 </script>
 
 <template>
-  <h1>Resumo para o WhatsApp</h1>
-  <p class="muted">Vagas que entraram no período, prontas para copiar e colar nos grupos.</p>
+  <h1 class="text-2xl font-bold tracking-tight">Resumo para o WhatsApp</h1>
+  <p class="mt-1 text-muted-foreground">Vagas que entraram no período, prontas para copiar e colar nos grupos.</p>
 
-  <form class="row" @submit.prevent="load">
-    <input v-model="token" type="password" class="field grow" placeholder="Token de admin" autocomplete="current-password" />
-    <select v-model.number="hours" class="field">
-      <option :value="24">Últimas 24h</option>
-      <option :value="48">Últimas 48h</option>
-      <option :value="72">Últimos 3 dias</option>
-    </select>
-    <button class="btn" type="submit" :disabled="loading">{{ loading ? "Gerando..." : "Gerar" }}</button>
+  <form class="mt-5 flex flex-wrap items-center gap-2" @submit.prevent="load">
+    <Input v-model="token" type="password" class="min-w-[200px] flex-1" placeholder="Token de admin" autocomplete="current-password" />
+    <Select v-model="hours">
+      <SelectTrigger class="w-44"><SelectValue /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="24">Últimas 24h</SelectItem>
+        <SelectItem value="48">Últimas 48h</SelectItem>
+        <SelectItem value="72">Últimos 3 dias</SelectItem>
+      </SelectContent>
+    </Select>
+    <Button type="submit" :disabled="loading">{{ loading ? "Gerando..." : "Gerar" }}</Button>
   </form>
 
-  <p v-if="error" class="err">{{ error }}</p>
+  <p v-if="error" class="mt-3 text-sm text-destructive">{{ error }}</p>
 
   <template v-if="text">
-    <div class="row between">
-      <span class="muted">{{ count }} {{ count === 1 ? "vaga" : "vagas" }}</span>
-      <button class="btn" type="button" @click="copy">{{ copied ? "Copiado ✓" : "Copiar texto" }}</button>
+    <div class="mt-6 flex items-center justify-between">
+      <span class="text-sm text-muted-foreground">{{ count }} {{ count === 1 ? "vaga" : "vagas" }}</span>
+      <Button type="button" @click="copy">{{ copied ? "Copiado ✓" : "Copiar texto" }}</Button>
     </div>
-    <textarea v-model="text" class="field out" rows="22" spellcheck="false" />
+    <textarea
+      v-model="text"
+      rows="22"
+      spellcheck="false"
+      class="mt-3 w-full resize-y rounded-md border border-input bg-card p-3 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+    />
   </template>
 </template>
-
-<style scoped>
-h1 { font-size: 24px; margin: 0 0 6px; }
-.row { display: flex; gap: 10px; margin-top: 18px; align-items: center; flex-wrap: wrap; }
-.between { justify-content: space-between; }
-.grow { flex: 1; min-width: 200px; }
-.out { width: 100%; margin-top: 12px; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 13.5px; resize: vertical; }
-.err { color: #ff8a8a; }
-</style>

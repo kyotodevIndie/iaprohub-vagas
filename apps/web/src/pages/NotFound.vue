@@ -1,11 +1,10 @@
+<script setup lang="ts">
+import { Button } from "@/components/ui/button";
+</script>
+
 <template>
-  <div class="box">
-    <h1>Página não encontrada</h1>
-    <RouterLink to="/" class="btn">Ver vagas abertas</RouterLink>
+  <div class="space-y-4 py-10">
+    <h1 class="text-2xl font-bold">Página não encontrada</h1>
+    <Button as-child><RouterLink to="/" class="no-underline">Ver vagas abertas</RouterLink></Button>
   </div>
 </template>
-
-<style scoped>
-.box { padding: 40px 0; }
-h1 { font-size: 24px; margin-bottom: 16px; }
-</style>

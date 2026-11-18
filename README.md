@@ -7,7 +7,7 @@ O agente de coleta manda as vagas prontas pela API de ingestão ([docs/API.md](d
 ## Estrutura
 
 - `apps/api`: Fastify + Postgres. API de ingestão, API pública, páginas com meta tags e JSON-LD (Google for Jobs), link curto `/v/:code`, sitemap e a expiração (de hora em hora).
-- `apps/web`: Vue 3 + Vite. Lista com busca e filtros, página da vaga e tela do resumo.
+- `apps/web`: Vue 3 + Vite + [nox-ui](https://github.com/kyotodevIndie/nox-ui) (preset do Tailwind e componentes em `src/components/ui`, tema em `src/theme.css`). Lista com busca, filtros e card de anúncio, página da vaga e tela do resumo.
 - `deploy/`: imagem única (a API serve o build do site), compose com Postgres e backup, e o script de deploy.
 
 ## Rodar local

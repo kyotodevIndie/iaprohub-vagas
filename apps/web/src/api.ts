@@ -50,6 +50,15 @@ async function get<T>(url: string, headers?: Record<string, string>): Promise<T>
   return res.json() as Promise<T>;
 }
 
+export interface Ad {
+  id: number;
+  title: string;
+  text: string | null;
+  cta: string | null;
+  url: string;
+}
+
+export const fetchAds = () => get<{ ads: Ad[] }>("/api/v1/ads").then((r) => r.ads);
 export const fetchJobs = (params: URLSearchParams) => get<JobPage>(`/api/v1/jobs?${params}`);
 export const fetchJob = (code: string) => get<Job>(`/api/v1/jobs/${encodeURIComponent(code)}`);
 export const fetchDigest = (token: string, hours: number) =>

@@ -1,79 +1,11 @@
-:root {
-  --bg: #11121c;
-  --surface: #1a1c2c;
-  --surface-hover: #202338;
-  --border: #2a2d45;
-  --border-strong: #3a3e5c;
-  --text: #f4f5fa;
-  --muted: #a3a6bd;
-  --faint: #7c809a;
-  --accent: #f97316;
-  --accent-hover: #fb8a3c;
-  --accent-ink: #11121c;
-  --chip: #252840;
-  --radius: 12px;
-  color-scheme: dark;
+@import "./theme.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
 }
-
-* { box-sizing: border-box; }
-
-html, body { margin: 0; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 15px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-a { color: inherit; }
-
-.container { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
-
-input, select, button { font: inherit; color: inherit; }
-
-.field {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  outline: none;
-  transition: border-color .15s;
-}
-.field:focus { border-color: var(--accent); }
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--chip);
-  color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.chip.money { color: #8ee6a8; }
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 0;
-  border-radius: 10px;
-  padding: 11px 20px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-}
-.btn:hover { background: var(--accent-hover); }
-.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
-.btn.ghost:hover { border-color: var(--accent); }
-
-.muted { color: var(--muted); }
