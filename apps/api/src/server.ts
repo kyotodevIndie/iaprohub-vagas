@@ -4,6 +4,7 @@ import { env } from "./env";
 import { expireJobs } from "./ingest";
 import { createMailer } from "./mail";
 import { matchNewJobs, sendApplications, sendDailyAlerts } from "./matching";
+import { createWhatsApp, sendDailyDigest } from "./whatsapp";
 
 const db = createPool(env.databaseUrl);
 await runMigrations(db);
@@ -17,8 +18,10 @@ const expire = () =>
 await expire();
 const timer = setInterval(expire, 60 * 60 * 1000);
 
-// Envio automático do Pro: casa vagas novas, manda os CVs e o alerta diário. A cada 5 minutos, sem rodadas sobrepostas.
+// A cada 5 minutos, sem rodadas sobrepostas: envio automático do Pro (casa vagas novas, manda os CVs e o alerta
+// diário) e o resumo diário no grupo do WhatsApp.
 const mailer = createMailer(env, (m) => app.log.info(m));
+const wa = env.evolution ? createWhatsApp(env.evolution) : null;
 let busy = false;
 const pro = async () => {
   if (busy) return;
@@ -28,6 +31,13 @@ const pro = async () => {
     const sent = await sendApplications(db, mailer);
     const alerts = await sendDailyAlerts(db, mailer, env.publicUrl);
     if (matched || sent || alerts) app.log.info({ matched, sent, alerts }, "envio automático");
+    if (wa) {
+      const digest = await sendDailyDigest(db, wa, env.publicUrl, env.evolution!.digestHour).catch((err) => {
+        app.log.error(err, "falha no resumo do WhatsApp");
+        return null;
+      });
+      if (digest) app.log.info(digest, "resumo do WhatsApp");
+    }
   } catch (err) {
     app.log.error(err, "falha no envio automático");
   } finally {

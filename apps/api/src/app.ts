@@ -15,6 +15,7 @@ import { allJobsForSitemap, getJob, listJobs, recentJobs } from "./jobs";
 import { createMailer, type Mailer } from "./mail";
 import { jobDescriptionSnippet, jobPostingLd, renderShell, sitemapXml } from "./seo";
 import { LABELS, VOCAB } from "./vocab";
+import { createWhatsApp, getSetting, GROUP_SETTING, setSetting, type WhatsApp } from "./whatsapp";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -35,10 +36,11 @@ function sameSecret(a: string, b: string) {
   return x.length === y.length && timingSafeEqual(x, y);
 }
 
-export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer } = {}) {
+export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer; whatsapp?: WhatsApp | null } = {}) {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" }, trustProxy: true });
   await app.register(rateLimit, { global: false });
   const mailer = opts.mailer ?? createMailer(env, (m) => app.log.info(m));
+  const wa = opts.whatsapp !== undefined ? opts.whatsapp : env.evolution ? createWhatsApp(env.evolution) : null;
 
   const requireClient = async (req: FastifyRequest, reply: FastifyReply) => {
     const token = bearer(req);
@@ -95,6 +97,43 @@ export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer } = {})
     const hours = Math.min(Math.max(Number((req.query as { hours?: string }).hours) || 24, 1), 168);
     const jobs = await recentJobs(db, hours);
     return { count: jobs.length, text: buildDigest(jobs, env.publicUrl) };
+  });
+
+  // Resumo no grupo do WhatsApp: estado da conexão, grupos do número, grupo escolhido e últimos envios.
+  app.get("/api/v1/admin/whatsapp", { preHandler: requireAdmin }, async () => {
+    const { rows: sends } = await db.query(
+      `SELECT to_char(day, 'DD/MM') AS day, job_count AS "count", sent_at AS "sentAt", error FROM wa_digest ORDER BY day DESC LIMIT 7`,
+    );
+    const groupJid = await getSetting(db, GROUP_SETTING);
+    if (!wa) return { enabled: false, groupJid, groups: [], sends };
+    try {
+      const [state, groups] = await Promise.all([wa.state(), wa.groups()]);
+      return { enabled: true, state, groupJid, groups: groups.sort((a, b) => a.subject.localeCompare(b.subject)), sends, hour: env.evolution?.digestHour ?? 9 };
+    } catch (err) {
+      return { enabled: true, state: "erro", error: (err as Error).message, groupJid, groups: [], sends };
+    }
+  });
+
+  app.put("/api/v1/admin/whatsapp", { preHandler: requireAdmin }, async (req, reply) => {
+    const body = z.object({ groupJid: z.string().regex(/@g\.us$/).nullable() }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: "mande { groupJid: \"...@g.us\" } ou null" });
+    await setSetting(db, GROUP_SETTING, body.data.groupJid);
+    return { groupJid: body.data.groupJid };
+  });
+
+  app.post("/api/v1/admin/whatsapp/send", { preHandler: requireAdmin }, async (req, reply) => {
+    if (!wa) return reply.code(503).send({ error: "WhatsApp não configurado" });
+    const group = await getSetting(db, GROUP_SETTING);
+    if (!group) return reply.code(409).send({ error: "escolha o grupo primeiro" });
+    const hours = Math.min(Math.max(Number((req.body as { hours?: number } | undefined)?.hours) || 24, 1), 168);
+    const jobs = await recentJobs(db, hours);
+    if (!jobs.length) return reply.code(409).send({ error: "sem vagas novas no período" });
+    try {
+      await wa.sendText(group, buildDigest(jobs, env.publicUrl));
+    } catch (err) {
+      return reply.code(502).send({ error: (err as Error).message });
+    }
+    return { sent: jobs.length };
   });
 
   app.delete("/api/v1/admin/jobs/:code", { preHandler: requireAdmin }, async (req) => {

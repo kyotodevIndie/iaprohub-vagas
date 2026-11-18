@@ -34,6 +34,15 @@ export const env = {
         plan: process.env.NOX_PLAN ?? "pro",
       }
     : null,
+  // WhatsApp da comunidade (Evolution API). Sem URL e chave, o resumo automático fica desligado.
+  evolution: process.env.EVOLUTION_URL && process.env.EVOLUTION_API_KEY
+    ? {
+        url: process.env.EVOLUTION_URL.replace(/\/+$/, ""),
+        apiKey: process.env.EVOLUTION_API_KEY,
+        instance: process.env.EVOLUTION_INSTANCE ?? "iapro",
+        digestHour: Number(process.env.DIGEST_HOUR ?? 9),
+      }
+    : null,
 };
 
 export type Env = typeof env;

@@ -44,3 +44,7 @@ Com `ADSENSE_CLIENT` (ex.: `ca-pub-1234567890123456`) no `stack.env`, o site pas
 Conta com login por código no e-mail, perfil e CV, envio automático do CV para as vagas com `applyEmail`, alerta diário às 9h, site sem anúncio para o Pro e banco de talentos para recrutadores aprovados em `/admin/recrutadores`. Regras em [docs/talentos.md](docs/talentos.md).
 
 Precisa no `stack.env`: `RESEND_API_KEY` e `EMAIL_FROM` (login e envios) e `NOX_URL`, `NOX_CLIENT_ID`, `NOX_SECRET` (assinatura; produto `iaprohub-vagas`, plano `pro`). Sem o Resend, o código de login só aparece no log, o que serve para rodar local.
+
+## Resumo automático no WhatsApp
+
+Com `EVOLUTION_URL` e `EVOLUTION_API_KEY` no `stack.env` (Evolution em `~/dev/evolution`, instância `iapro`), o resumo das últimas 24h sai uma vez por dia a partir de `DIGEST_HOUR` (9h de Brasília) no grupo escolhido em `/admin/resumo`. Sem grupo escolhido, nada é enviado. A mesma tela tem o botão "Enviar agora".

@@ -23,7 +23,7 @@ beforeAll(async () => {
   db = createPool(url);
   await db.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
   await runMigrations(db, () => {});
-  app = await buildApp(db, { databaseUrl: url, port: 0, publicUrl: "https://site.test", adminToken: ADMIN, webDist, adsense: { client: "ca-pub-1234567890123456", slot: "9876543210" }, email: null, nox: null });
+  app = await buildApp(db, { databaseUrl: url, port: 0, publicUrl: "https://site.test", adminToken: ADMIN, webDist, adsense: { client: "ca-pub-1234567890123456", slot: "9876543210" }, email: null, nox: null, evolution: null });
   const res = await app.inject({ method: "POST", url: "/api/v1/admin/clients", headers: { authorization: `Bearer ${ADMIN}` }, payload: { name: "gpt" } });
   token = res.json().token;
 });

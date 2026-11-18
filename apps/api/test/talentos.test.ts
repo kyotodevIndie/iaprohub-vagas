@@ -4,6 +4,7 @@ import { buildApp } from "../src/app";
 import { createPool, runMigrations, type Db } from "../src/db";
 import type { Mail } from "../src/mail";
 import { matchNewJobs, sendApplications, sendDailyAlerts } from "../src/matching";
+import { sendDailyDigest, type WhatsApp } from "../src/whatsapp";
 
 // Schema próprio no mesmo banco de teste, para rodar em paralelo com api.test.ts.
 const base = process.env.TEST_DATABASE_URL ?? "postgres://vagas:vagas@localhost:5442/vagas_test";
@@ -15,6 +16,12 @@ let db: Db;
 let app: Awaited<ReturnType<typeof buildApp>>;
 let ingestToken = "";
 const outbox: Mail[] = [];
+const waSent: { to: string; text: string }[] = [];
+const fakeWa: WhatsApp = {
+  state: async () => "open",
+  groups: async () => [{ id: "123@g.us", subject: "IAPro Vagas", size: 300 }],
+  sendText: async (to, text) => void waSent.push({ to, text }),
+};
 
 const probe = createPool(base);
 const available = await probe.query("SELECT 1").then(() => true, () => false);
@@ -36,8 +43,9 @@ beforeAll(async () => {
       adsense: null,
       email: null,
       nox: { url: "http://nox.invalid", clientId: "c", secret: NOX_SECRET, product: "iaprohub-vagas", plan: "pro" },
+      evolution: null,
     },
-    { mailer: async (m) => void outbox.push(m) },
+    { mailer: async (m) => void outbox.push(m), whatsapp: fakeWa },
   );
   const res = await app.inject({ method: "POST", url: "/api/v1/admin/clients", headers: { authorization: `Bearer ${ADMIN}` }, payload: { name: "gpt" } });
   ingestToken = res.json().token;
@@ -181,6 +189,29 @@ describe.skipIf(!available)("Talentos Pro", () => {
 
     const apps = (await app.inject({ url: "/api/v1/me/applications", headers: ana })).json().items;
     expect(apps.map((a: { channel: string; status: string }) => `${a.channel}:${a.status}`).sort()).toEqual(["alerta:enviado", "email:enviado"]);
+  });
+
+  it("WhatsApp: só manda depois de escolher o grupo, uma vez por dia, a partir das 9h", async () => {
+    const admin = { authorization: `Bearer ${ADMIN}` };
+    const at = (iso: string) => sendDailyDigest(db, fakeWa, "https://site.test", 9, new Date(iso));
+    expect(await at("2026-11-18T13:00:00Z")).toBeNull(); // sem grupo escolhido
+    const info = (await app.inject({ url: "/api/v1/admin/whatsapp", headers: admin })).json();
+    expect(info).toMatchObject({ enabled: true, state: "open", groupJid: null, groups: [{ id: "123@g.us" }] });
+    expect((await app.inject({ method: "PUT", url: "/api/v1/admin/whatsapp", headers: admin, payload: { groupJid: "5585999@s.whatsapp.net" } })).statusCode).toBe(400);
+    await app.inject({ method: "PUT", url: "/api/v1/admin/whatsapp", headers: admin, payload: { groupJid: "123@g.us" } });
+
+    expect(await at("2026-11-18T11:00:00Z")).toBeNull(); // 8h em SP
+    await db.query("UPDATE job SET first_seen_at = now()");
+    const sent = await at("2026-11-18T13:00:00Z");
+    expect(sent?.count).toBeGreaterThan(0);
+    expect(waSent).toHaveLength(1);
+    expect(waSent[0]!.to).toBe("123@g.us");
+    expect(waSent[0]!.text).toContain("Vagas tech de hoje");
+    expect(await at("2026-11-18T20:00:00Z")).toBeNull(); // já saiu hoje
+
+    const manual = await app.inject({ method: "POST", url: "/api/v1/admin/whatsapp/send", headers: admin, payload: { hours: 24 } });
+    expect(manual.json().sent).toBeGreaterThan(0);
+    expect(waSent).toHaveLength(2);
   });
 
   it("recrutador: pede acesso, admin aprova, busca anônima, contato aceito pela pessoa", async () => {
