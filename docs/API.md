@@ -33,6 +33,7 @@ curl -X POST https://iaprohub.vagas.aurora-saas.com.br/api/v1/admin/clients \
       "location": "Brasil",
       "salary": { "min": 15000, "max": 20000, "currency": "BRL", "period": "month" },
       "applyUrl": "https://boards.greenhouse.io/acme/jobs/4012345",
+      "applyEmail": "vagas@acme.com",
       "publishedAt": "2026-11-17T12:00:00Z"
     }
   ]
@@ -53,6 +54,7 @@ curl -X POST https://iaprohub.vagas.aurora-saas.com.br/api/v1/admin/clients \
 | `stack` | não | até 30 termos, em minúsculas |
 | `location` | não | texto exibido como veio: `Brasil`, `São Paulo, SP`, `LatAm` |
 | `salary` | não | `min`/`max` (números), `currency` (padrão `BRL`), `period` (`month` padrão, `year`, `day`, `hour`) ou `text` (ex.: `"A combinar"`) |
+| `applyEmail` | não | e-mail de candidatura que a própria vaga pede. Só mande quando a vaga diz "mande o CV para ..."; o envio automático do Pro usa este campo |
 | `publishedAt` | não | ISO 8601 com fuso; ordena a lista. Sem ele, vale a hora em que a vaga chegou. |
 
 Os campos de vocabulário aceitam acento, maiúsculas e alguns sinônimos (`Sênior`, `sr`, `Remote`, `hybrid`). Um valor desconhecido rejeita só aquele item.
@@ -77,6 +79,16 @@ Resposta: um resultado por vaga, na mesma ordem.
 
 - `GET /api/v1/admin/digest?hours=24` (Bearer admin): texto do resumo para o WhatsApp. O mesmo resumo aparece na tela `/admin/resumo`.
 - `DELETE /api/v1/admin/jobs/:id` (Bearer admin): apaga uma vaga.
+- `GET /api/v1/admin/recruiters` e `POST /api/v1/admin/recruiters/:id` `{ "status": "aprovado" | "recusado" }` (Bearer admin): pedidos de recrutador. A tela fica em `/admin/recrutadores`.
+
+## Contas e Pro (usadas pelo site)
+
+Regras em [talentos.md](talentos.md). A sessão é um cookie httpOnly.
+
+- `POST /api/v1/auth/code` `{ email }`, `POST /api/v1/auth/verify` `{ email, code, acceptTerms: true }`, `POST /api/v1/auth/logout`
+- `GET /api/v1/me`, `PUT /api/v1/me/profile`, `PUT|GET|DELETE /api/v1/me/cv` (PDF cru, até 3 MB), `GET /api/v1/me/applications`, `DELETE /api/v1/me`
+- `POST /api/v1/me/billing/checkout` `{ method: "pix" | "card" }` e o webhook do Nox em `POST /api/v1/nox/webhook`
+- `POST /api/v1/me/recruiter` `{ company }`, `GET /api/v1/talents`, `POST /api/v1/talents/:id/contact` `{ message }`, `GET|POST /api/v1/contact/:token`
 
 ## Anúncios
 

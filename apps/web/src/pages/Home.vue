@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adsense } from "@/lib/adsense";
+import { me } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { fetchAds, fetchJobs, type Ad, type Job } from "@/api";
 
@@ -40,7 +41,7 @@ const feed = computed(() => {
   jobs.value.forEach((job, i) => {
     out.push({ kind: "job", job });
     const n = (i + 1) / AD_EVERY;
-    if (!Number.isInteger(n)) return;
+    if (!Number.isInteger(n) || me.value === undefined || me.value?.pro) return; // Pro não vê anúncio; espera a conta carregar
     if (ads.value.length) out.push({ kind: "ad", ad: ads.value[(n - 1) % ads.value.length]!, key: `ad-${n}` });
     else if (adsense) out.push({ kind: "adsense", key: `adsense-${n}` });
   });

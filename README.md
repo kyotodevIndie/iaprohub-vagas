@@ -38,3 +38,9 @@ Builda a imagem localmente, envia para `saas-vps` por SSH e sobe a stack em `/ho
 ## Google AdSense
 
 Com `ADSENSE_CLIENT` (ex.: `ca-pub-1234567890123456`) no `stack.env`, o site passa a ter a meta tag de verificação, o script do AdSense em todas as páginas públicas e o `/ads.txt`. Com `ADSENSE_SLOT` (id de um bloco "In-feed" criado no painel do AdSense), a lista mostra esse bloco a cada 12 vagas quando não houver anúncio direto ativo. Depois de editar o `stack.env`, rode o deploy de novo. A política de privacidade exigida pelo AdSense fica em `/privacidade`.
+
+## Talentos Pro (R$ 5/mês)
+
+Conta com login por código no e-mail, perfil e CV, envio automático do CV para as vagas com `applyEmail`, alerta diário às 9h, site sem anúncio para o Pro e banco de talentos para recrutadores aprovados em `/admin/recrutadores`. Regras em [docs/talentos.md](docs/talentos.md).
+
+Precisa no `stack.env`: `RESEND_API_KEY` e `EMAIL_FROM` (login e envios) e `NOX_URL`, `NOX_CLIENT_ID`, `NOX_SECRET` (assinatura; produto `iaprohub-vagas`, plano `pro`). Sem o Resend, o código de login só aparece no log, o que serve para rodar local.

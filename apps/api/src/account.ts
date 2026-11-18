@@ -18,6 +18,7 @@ export async function accountRoutes(
   env: Env,
   mail: Mailer,
   requireAdmin: (req: FastifyRequest, reply: FastifyReply) => Promise<unknown>,
+  mailReady: boolean,
 ) {
   const secure = env.publicUrl.startsWith("https://");
   const requireUser = async (req: FastifyRequest, reply: FastifyReply) => {
@@ -35,6 +36,7 @@ export async function accountRoutes(
   app.post("/api/v1/auth/code", { config: perHour(20) }, async (req, reply) => {
     const body = z.object({ email: emailField }).safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: "e-mail inválido" });
+    if (!mailReady) return reply.code(503).send({ error: "As contas abrem em breve." });
     const code = await createLoginCode(db, body.data.email);
     if (!code) return reply.code(429).send({ error: "muitos códigos pedidos; tente daqui a uma hora" });
     try {

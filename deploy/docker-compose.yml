@@ -34,6 +34,13 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
       ADSENSE_SLOT: ${ADSENSE_SLOT:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      NOX_URL: ${NOX_URL:-}
+      NOX_CLIENT_ID: ${NOX_CLIENT_ID:-}
+      NOX_SECRET: ${NOX_SECRET:-}
+      NOX_PRODUCT: ${NOX_PRODUCT:-iaprohub-vagas}
+      NOX_PLAN: ${NOX_PLAN:-pro}
     networks: [default, proxy]
     labels:
       caddy: ${DOMAIN}

@@ -130,7 +130,9 @@ export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer } = {})
     return { disabled: rowCount ?? 0 };
   });
 
-  await accountRoutes(app, db, env, mailer, requireAdmin);
+  // Em produção (https) sem Resend, o código iria só para o log: o login fica desligado.
+  const mailReady = !!opts.mailer || !!env.email || !env.publicUrl.startsWith("https://");
+  await accountRoutes(app, db, env, mailer, requireAdmin, mailReady);
 
   // ---- API pública (site) ----
   const listQuery = z.object({

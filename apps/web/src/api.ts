@@ -44,7 +44,7 @@ export const LABELS: Record<string, string> = {
 
 export const label = (v: string) => LABELS[v] ?? v;
 
-async function get<T>(url: string, headers?: Record<string, string>): Promise<T> {
+export async function get<T>(url: string, headers?: Record<string, string>): Promise<T> {
   const res = await fetch(url, { headers });
   if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
   return res.json() as Promise<T>;
@@ -74,3 +74,74 @@ export function ago(iso: string): string {
 
 /** O slug termina com "-<code>". */
 export const codeFromSlug = (slug: string) => slug.slice(slug.lastIndexOf("-") + 1);
+
+/** POST/PUT/DELETE com JSON; o erro traz o status e a mensagem da API. */
+export async function send<T>(method: string, url: string, body?: unknown, headers: Record<string, string> = {}): Promise<T> {
+  const isRaw = body instanceof Blob;
+  const res = await fetch(url, {
+    method,
+    headers: { ...(body !== undefined && !isRaw ? { "content-type": "application/json" } : {}), ...headers },
+    body: body === undefined ? undefined : isRaw ? body : JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error ?? `HTTP ${res.status}`), { status: res.status });
+  return data as T;
+}
+
+export const errorMessage = (err: unknown) => (err as Error).message || "Algo deu errado. Tente de novo.";
+
+export interface Me {
+  id: number;
+  email: string;
+  pro: boolean;
+  billingStatus: "trial" | "active" | "past_due" | "canceled" | null;
+  paidUntil: string | null;
+  recruiterStatus: "pendente" | "aprovado" | "recusado" | null;
+  recruiterCompany: string | null;
+}
+
+export interface Profile {
+  publicId: string;
+  name: string | null;
+  phone: string | null;
+  linkedin: string | null;
+  headline: string | null;
+  currentCompany: string | null;
+  summary: string | null;
+  region: string | null;
+  seniority: string[];
+  workplace: string[];
+  stack: string[];
+  salaryMin: number | null;
+  visibility: "oculto" | "anonimo" | "aberto";
+  consents: { talentBank: boolean; autoApply: boolean; alerts: boolean };
+  cvFilename: string | null;
+  cvUpdatedAt: string | null;
+}
+
+export interface Application {
+  jobCode: string;
+  jobTitle: string;
+  company: string | null;
+  applyUrl: string;
+  channel: "email" | "alerta";
+  toEmail: string | null;
+  status: "pendente" | "enviado" | "falhou";
+  createdAt: string;
+  sentAt: string | null;
+}
+
+export interface Talent {
+  id: string;
+  headline: string | null;
+  seniority: string[];
+  workplace: string[];
+  stack: string[];
+  region: string | null;
+  summary: string | null;
+  salaryMin: number | null;
+  visibility: "anonimo" | "aberto";
+  pro: boolean;
+  currentCompany: string | null;
+  linkedin: string | null;
+}
