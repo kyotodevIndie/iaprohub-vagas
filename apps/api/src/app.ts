@@ -165,6 +165,12 @@ export async function buildApp(db: Db, env: Env) {
     return job ? reply.redirect(`/vagas/${job.slug}`, 301) : reply.redirect("/", 302);
   });
 
+  // Sem AdSense configurado, 404: um ads.txt vazio faria o Google achar que ninguém pode vender anúncio aqui.
+  app.get("/ads.txt", async (_req, reply) => {
+    if (!env.adsense) return reply.code(404).type("text/plain").send("");
+    return reply.type("text/plain").send(`google.com, ${env.adsense.client.replace(/^ca-/, "")}, DIRECT, f08c47fec0942fa0\n`);
+  });
+
   app.get("/robots.txt", async (_req, reply) =>
     reply.type("text/plain").send(`User-agent: *\nDisallow: /admin\nDisallow: /api/\nSitemap: ${env.publicUrl}/sitemap.xml\n`),
   );
@@ -187,13 +193,21 @@ export async function buildApp(db: Db, env: Env) {
     });
     // fastify-static sem wildcard só registra os arquivos que existem no boot; o resto cai nas rotas abaixo.
 
-    const home = renderShell(shell, { title: `Vagas de tecnologia | ${SITE_NAME}`, description: SITE_DESCRIPTION, canonical: `${env.publicUrl}/` });
+    const adsense = env.adsense;
+    const home = renderShell(shell, { title: `Vagas de tecnologia | ${SITE_NAME}`, description: SITE_DESCRIPTION, canonical: `${env.publicUrl}/`, adsense });
+    const privacy = renderShell(shell, {
+      title: `Política de privacidade | ${SITE_NAME}`,
+      description: "Quais dados o IAPro Vagas usa, os cookies de anúncios do Google e como desativar a personalização.",
+      canonical: `${env.publicUrl}/privacidade`,
+      adsense,
+    });
+    app.get("/privacidade", async (_req, reply) => reply.header("cache-control", "public, max-age=600").type("text/html").send(privacy));
     app.get("/", async (_req, reply) => reply.header("cache-control", "public, max-age=60").type("text/html").send(home));
 
     app.get("/vagas/:slug", async (req, reply) => {
       const job = await getJob(db, { slug: (req.params as { slug: string }).slug });
       if (!job) {
-        const gone = renderShell(shell, { title: `Vaga encerrada | ${SITE_NAME}`, description: SITE_DESCRIPTION, canonical: `${env.publicUrl}/`, noindex: true });
+        const gone = renderShell(shell, { title: `Vaga encerrada | ${SITE_NAME}`, description: SITE_DESCRIPTION, canonical: `${env.publicUrl}/`, noindex: true, adsense });
         return reply.code(410).type("text/html").send(gone);
       }
       const html = renderShell(shell, {
@@ -201,6 +215,7 @@ export async function buildApp(db: Db, env: Env) {
         description: jobDescriptionSnippet(job),
         canonical: `${env.publicUrl}/vagas/${job.slug}`,
         jsonLd: jobPostingLd(job, env.publicUrl),
+        adsense,
       });
       return reply.header("cache-control", "public, max-age=60").type("text/html").send(html);
     });

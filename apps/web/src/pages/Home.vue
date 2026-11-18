@@ -3,10 +3,12 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Search } from "@lucide/vue";
 import AdCard from "@/components/AdCard.vue";
+import AdSenseCard from "@/components/AdSenseCard.vue";
 import JobCard from "@/components/JobCard.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { adsense } from "@/lib/adsense";
 import { cn } from "@/lib/utils";
 import { fetchAds, fetchJobs, type Ad, type Job } from "@/api";
 
@@ -32,13 +34,15 @@ const WORKPLACES: [string, string][] = [["todos", "Todos os modelos"], ["remoto"
 const SENIORITIES: [string, string][] = [["estagio", "Estágio"], ["junior", "Júnior"], ["pleno", "Pleno"], ["senior", "Sênior"], ["especialista", "Especialista"], ["lideranca", "Liderança"]];
 const AD_EVERY = 12;
 
-/** Vagas com um anúncio a cada 12 cards (nenhum se não houver anúncio ativo). */
+/** Vagas com um anúncio a cada 12 cards: o direto quando houver, senão o AdSense, senão nenhum. */
 const feed = computed(() => {
-  const out: ({ kind: "job"; job: Job } | { kind: "ad"; ad: Ad; key: string })[] = [];
+  const out: ({ kind: "job"; job: Job } | { kind: "ad"; ad: Ad; key: string } | { kind: "adsense"; key: string })[] = [];
   jobs.value.forEach((job, i) => {
     out.push({ kind: "job", job });
     const n = (i + 1) / AD_EVERY;
-    if (ads.value.length && Number.isInteger(n)) out.push({ kind: "ad", ad: ads.value[(n - 1) % ads.value.length]!, key: `ad-${n}` });
+    if (!Number.isInteger(n)) return;
+    if (ads.value.length) out.push({ kind: "ad", ad: ads.value[(n - 1) % ads.value.length]!, key: `ad-${n}` });
+    else if (adsense) out.push({ kind: "adsense", key: `adsense-${n}` });
   });
   return out;
 });
@@ -131,7 +135,8 @@ onMounted(() => {
     <div v-if="jobs.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <template v-for="item in feed" :key="item.kind === 'job' ? item.job.code : item.key">
         <JobCard v-if="item.kind === 'job'" :job="item.job" />
-        <AdCard v-else :ad="item.ad" />
+        <AdCard v-else-if="item.kind === 'ad'" :ad="item.ad" />
+        <AdSenseCard v-else />
       </template>
     </div>
     <p v-else-if="failed" class="py-10 text-center text-muted-foreground">Não deu para carregar as vagas agora. Tente de novo em instantes.</p>

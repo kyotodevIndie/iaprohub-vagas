@@ -23,7 +23,7 @@ beforeAll(async () => {
   db = createPool(url);
   await db.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public");
   await runMigrations(db, () => {});
-  app = await buildApp(db, { databaseUrl: url, port: 0, publicUrl: "https://site.test", adminToken: ADMIN, webDist });
+  app = await buildApp(db, { databaseUrl: url, port: 0, publicUrl: "https://site.test", adminToken: ADMIN, webDist, adsense: { client: "ca-pub-1234567890123456", slot: "9876543210" } });
   const res = await app.inject({ method: "POST", url: "/api/v1/admin/clients", headers: { authorization: `Bearer ${ADMIN}` }, payload: { name: "gpt" } });
   token = res.json().token;
 });
@@ -111,6 +111,17 @@ describe.skipIf(!available)("API", () => {
     expect((await app.inject({ url: "/api/v1/ads" })).json().ads).toEqual([{ id: created.json().id, title: "Curso X", text: "Aprenda Y", cta: null, url: "https://x.com" }]);
     await app.inject({ method: "DELETE", url: `/api/v1/admin/ads/${created.json().id}`, headers: admin });
     expect((await app.inject({ url: "/api/v1/ads" })).json().ads).toEqual([]);
+  });
+
+  it("AdSense: ads.txt, script e slot nas páginas, página de privacidade", async () => {
+    expect((await app.inject({ url: "/ads.txt" })).body).toBe("google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0\n");
+    const home = (await app.inject({ url: "/" })).body;
+    expect(home).toContain('<meta name="google-adsense-account" content="ca-pub-1234567890123456">');
+    expect(home).toContain('<meta name="iaprohub-adsense-slot" content="9876543210">');
+    expect(home).toContain("adsbygoogle.js?client=ca-pub-1234567890123456");
+    const privacy = await app.inject({ url: "/privacidade" });
+    expect(privacy.statusCode).toBe(200);
+    expect(privacy.body).toContain("<title>Política de privacidade | IAPro Vagas</title>");
   });
 
   it("fecha e expira", async () => {

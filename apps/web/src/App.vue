@@ -17,5 +17,6 @@ import SupportPix from "@/components/SupportPix.vue";
   <SupportPix />
   <footer class="mx-auto max-w-6xl border-t border-border px-4 pb-8 pt-5 text-sm text-muted-foreground">
     Vagas de tecnologia publicadas nos últimos dias. Cada vaga fica no ar por 3 semanas. A candidatura é feita no site da empresa.
+    <RouterLink to="/privacidade" class="ml-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">Privacidade</RouterLink>
   </footer>
 </template>

@@ -34,3 +34,7 @@ bash deploy/vps-deploy.sh
 ```
 
 Builda a imagem localmente, envia para `saas-vps` por SSH e sobe a stack em `/home/deploy/iaprohub-vagas`. Na primeira vez, o script cria o `stack.env` com segredos novos (incluindo o `ADMIN_TOKEN`).
+
+## Google AdSense
+
+Com `ADSENSE_CLIENT` (ex.: `ca-pub-1234567890123456`) no `stack.env`, o site passa a ter a meta tag de verificação, o script do AdSense em todas as páginas públicas e o `/ads.txt`. Com `ADSENSE_SLOT` (id de um bloco "In-feed" criado no painel do AdSense), a lista mostra esse bloco a cada 12 vagas quando não houver anúncio direto ativo. Depois de editar o `stack.env`, rode o deploy de novo. A política de privacidade exigida pelo AdSense fica em `/privacidade`.

@@ -47,6 +47,17 @@ export interface PageMeta {
   canonical: string;
   jsonLd?: unknown;
   noindex?: boolean;
+  adsense?: { client: string; slot: string | null } | null;
+}
+
+/** Tags do AdSense: verificação do site, o script e o slot do bloco da lista (lido pelo site). */
+function adsenseTags(a: PageMeta["adsense"]): string[] {
+  if (!a) return [];
+  return [
+    `<meta name="google-adsense-account" content="${esc(a.client)}">`,
+    a.slot ? `<meta name="iaprohub-adsense-slot" content="${esc(a.slot)}">` : "",
+    `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${esc(a.client)}" crossorigin="anonymous"></script>`,
+  ];
 }
 
 /** Troca o <title> do index.html do Vue e injeta as meta tags da página. */
@@ -62,6 +73,7 @@ export function renderShell(html: string, m: PageMeta): string {
     `<meta name="twitter:card" content="summary_large_image">`,
     m.noindex ? `<meta name="robots" content="noindex">` : "",
     m.jsonLd ? `<script type="application/ld+json">${scriptJson(m.jsonLd)}</script>` : "",
+    ...adsenseTags(m.adsense),
   ].filter(Boolean);
   return html
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(m.title)}</title>`)
@@ -70,7 +82,7 @@ export function renderShell(html: string, m: PageMeta): string {
 }
 
 export function sitemapXml(publicUrl: string, rows: { slug: string; updated_at: Date }[]): string {
-  const urls = [`<url><loc>${publicUrl}/</loc><changefreq>hourly</changefreq></url>`].concat(
+  const urls = [`<url><loc>${publicUrl}/</loc><changefreq>hourly</changefreq></url>`, `<url><loc>${publicUrl}/privacidade</loc></url>`].concat(
     rows.map((r) => `<url><loc>${publicUrl}/vagas/${esc(r.slug)}</loc><lastmod>${r.updated_at.toISOString()}</lastmod></url>`),
   );
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`;

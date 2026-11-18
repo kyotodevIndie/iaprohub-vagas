@@ -8,6 +8,7 @@ const router = createRouter({
   routes: [
     { path: "/", component: () => import("./pages/Home.vue") },
     { path: "/vagas/:slug", component: () => import("./pages/Job.vue") },
+    { path: "/privacidade", component: () => import("./pages/Privacidade.vue") },
     { path: "/admin/resumo", component: () => import("./pages/Resumo.vue") },
     { path: "/:rest(.*)", component: () => import("./pages/NotFound.vue") },
   ],

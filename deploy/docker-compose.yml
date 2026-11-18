@@ -32,6 +32,8 @@ services:
       PUBLIC_URL: https://${DOMAIN:?}
       ADMIN_TOKEN: ${ADMIN_TOKEN:?}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
+      ADSENSE_SLOT: ${ADSENSE_SLOT:-}
     networks: [default, proxy]
     labels:
       caddy: ${DOMAIN}
