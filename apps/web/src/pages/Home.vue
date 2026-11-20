@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Search } from "@lucide/vue";
+import { SearchX, Search, TriangleAlert } from "@lucide/vue";
 import AdCard from "@/components/AdCard.vue";
 import AdSenseCard from "@/components/AdSenseCard.vue";
 import JobCard from "@/components/JobCard.vue";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
+import { Toggle } from "@/components/ui/toggle";
 import { adsense } from "@/lib/adsense";
 import { me } from "@/lib/session";
-import { cn } from "@/lib/utils";
 import { fetchAds, fetchJobs, type Ad, type Job } from "@/api";
 
 const route = useRoute();
@@ -86,9 +89,10 @@ watch(filters, () => {
   }, 250);
 });
 
-const toggleSeniority = (s: string) => (filters.seniority = filters.seniority === s ? "" : s);
-const pill = (on: boolean) =>
-  cn("rounded-full border-border px-3.5 font-normal text-muted-foreground shadow-none", on && "border-primary bg-primary font-semibold text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground");
+const filtered = computed(() => !!(filters.q.trim() || filters.workplace !== "todos" || filters.seniority || filters.salary));
+const clearFilters = () => Object.assign(filters, { q: "", workplace: "todos", seniority: "", salary: false });
+const pill =
+  "h-8 rounded-full border-border px-3.5 font-normal text-muted-foreground shadow-none data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:font-semibold data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90";
 
 onMounted(() => {
   load(true);
@@ -97,40 +101,39 @@ onMounted(() => {
 </script>
 
 <template>
-  <section>
-    <div class="mb-5 flex items-baseline gap-3">
-      <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Vagas abertas</h1>
-      <span v-if="total" class="text-sm text-muted-foreground">{{ total }} {{ total === 1 ? "vaga" : "vagas" }}</span>
+  <section class="flex flex-col gap-6">
+    <div class="flex items-baseline gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight">Vagas abertas</h1>
+      <span v-if="total" class="text-sm text-muted-foreground tabular-nums">{{ total }} {{ total === 1 ? "vaga" : "vagas" }}</span>
     </div>
 
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <div class="relative flex-1">
-        <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <Input v-model="filters.q" type="search" class="h-control-lg bg-card pl-9" placeholder="Buscar por cargo, empresa ou stack..." aria-label="Buscar vagas" />
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <div class="relative flex-1">
+          <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input v-model="filters.q" type="search" class="h-10 pl-9" placeholder="Buscar por cargo, empresa ou stack..." aria-label="Buscar vagas" />
+        </div>
+        <Select v-model="filters.workplace">
+          <SelectTrigger class="w-full data-[size=default]:h-10 sm:w-52" aria-label="Modelo de trabalho">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="[v, l] in WORKPLACES" :key="v" :value="v">{{ l }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      <Select v-model="filters.workplace">
-        <SelectTrigger class="h-control-lg bg-card sm:w-52" aria-label="Modelo de trabalho">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="[v, l] in WORKPLACES" :key="v" :value="v">{{ l }}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
 
-    <div class="mb-6 mt-4 flex flex-wrap gap-2">
-      <Button
-        v-for="[v, l] in SENIORITIES"
-        :key="v"
-        variant="outline"
-        size="sm"
-        :class="pill(filters.seniority === v)"
-        :aria-pressed="filters.seniority === v"
-        @click="toggleSeniority(v)"
-      >{{ l }}</Button>
-      <Button variant="outline" size="sm" :class="pill(filters.salary)" :aria-pressed="filters.salary" @click="filters.salary = !filters.salary">
-        Com salário
-      </Button>
+      <div class="flex flex-wrap gap-2">
+        <Toggle
+          v-for="[v, l] in SENIORITIES"
+          :key="v"
+          variant="outline"
+          :class="pill"
+          :model-value="filters.seniority === v"
+          @update:model-value="(on) => (filters.seniority = on ? v : '')"
+        >{{ l }}</Toggle>
+        <Toggle v-model="filters.salary" variant="outline" :class="pill">Com salário</Toggle>
+      </div>
     </div>
 
     <div v-if="jobs.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -140,12 +143,37 @@ onMounted(() => {
         <AdSenseCard v-else />
       </template>
     </div>
-    <p v-else-if="failed" class="py-10 text-center text-muted-foreground">Não deu para carregar as vagas agora. Tente de novo em instantes.</p>
-    <p v-else-if="!loading" class="py-10 text-center text-muted-foreground">Nenhuma vaga com esses filtros.</p>
+    <div v-else-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+      <Skeleton v-for="n in 6" :key="n" class="h-52 rounded-xl" />
+    </div>
+    <Empty v-else-if="failed">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><TriangleAlert /></EmptyMedia>
+        <EmptyTitle>Não foi possível carregar as vagas</EmptyTitle>
+        <EmptyDescription>Confira a sua conexão e tente de novo.</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent><Button variant="outline" @click="load(true)">Tentar de novo</Button></EmptyContent>
+    </Empty>
+    <Empty v-else-if="filtered">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><SearchX /></EmptyMedia>
+        <EmptyTitle>Nenhuma vaga com esses filtros</EmptyTitle>
+        <EmptyDescription>Tente outra busca ou tire alguns filtros.</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent><Button variant="outline" @click="clearFilters">Limpar filtros</Button></EmptyContent>
+    </Empty>
+    <Empty v-else>
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><Search /></EmptyMedia>
+        <EmptyTitle>Nenhuma vaga no ar agora</EmptyTitle>
+        <EmptyDescription>Vagas novas chegam todo dia. Volte mais tarde.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
 
-    <div v-if="jobs.length < total" class="mt-8 flex justify-center">
+    <div v-if="jobs.length < total" class="flex justify-center">
       <Button variant="outline" size="lg" :disabled="loading" @click="load(false)">
-        {{ loading ? "Carregando..." : "Carregar mais vagas" }}
+        <Spinner v-if="loading" />
+        Carregar mais vagas
       </Button>
     </div>
   </section>

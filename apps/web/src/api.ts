@@ -72,6 +72,15 @@ export function ago(iso: string): string {
   return `há ${days} dias`;
 }
 
+/** Data em pt-BR no fuso de São Paulo: "18/11/2026" (ou "18/11" com short). */
+export const date = (iso: string, short = false) =>
+  new Date(iso).toLocaleDateString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    ...(short ? {} : { year: "numeric" }),
+  });
+
 /** O slug termina com "-<code>". */
 export const codeFromSlug = (slug: string) => slug.slice(slug.lastIndexOf("-") + 1);
 

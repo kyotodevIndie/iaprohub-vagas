@@ -5,4 +5,3 @@ allowBuilds:
   vue-demi: true
 minimumReleaseAgeExclude:
   - '@fastify/cors@11.4.2'
-  - '@noxlabsbr/ui@0.1.0'
