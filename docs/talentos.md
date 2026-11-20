@@ -41,5 +41,5 @@ IA no CV, robô em ATS, alerta pelo WhatsApp e cobrança de recrutador.
 ## O que você precisa providenciar
 
 1. **Nox:** cadastrar o produto `iaprohub-vagas` com o plano `pro` (R$ 5, mensal) e me passar `NOX_CLIENT_ID` e `NOX_SECRET`.
-2. **Resend:** uma chave e um remetente verificado (ex.: `vagas@aurora-saas.com.br`). Sem eles, o login não funciona em produção.
+2. **Resend:** uma chave e um remetente verificado (ex.: `vagas@noxlabs.com.br`). Sem eles, o login não funciona em produção.
 3. **E-mail de privacidade** para a política (pode ser o mesmo remetente).

@@ -13,7 +13,7 @@ Não é SaaS: não tem plano, assinatura nem multi-tenant. O Nox só entra se um
 1. **O hub só recebe e mostra (decisões de 18/11/2026).** Quem busca, filtra e preenche as vagas é o agente da pessoa (GPT ou outro), rodando onde ela quiser. Ele já manda só vagas do nicho, com **no máximo 3 dias de publicação** e com todos os campos preenchidos. O hub oferece uma **API de ingestão** autenticada (seção 4), guarda, exibe, expira em 21 dias e monta o resumo do WhatsApp. Não há filtro, normalização nem deduplicação entre fontes no servidor. As seções sobre fontes e IA ficam só como referência para o agente.
 2. **Sem IA dentro do hub.** A IA só aparece na Fase 2, e é opcional: serve para dar uma nota de risco às vagas que recrutadores publicarem direto no site.
 3. **O modelo de dados já existe.** `@ecosystem/job-schema` do JobLens (`Job`, `JobSource`, `Compensation`, `WorkplaceType`, `Seniority`) é a forma normalizada da vaga. Este é o 2º uso, então **copiamos** o pacote em vez de extrair um compartilhado. A extração só acontece no 3º uso.
-4. **Usar o que a casa já tem:** Fastify + Postgres + Vue em monorepo pnpm, deploy na VPS compartilhada (`vagas.aurora-saas.com.br` até haver domínio próprio), Caddy e o padrão de `deploy/` do Agendia. A interface `WhatsAppTransport` de `~/dev/agendia/packages/whatsapp` serve de referência: basta criar um `EvolutionTransport` com a mesma forma (só leitura do Agendia).
+4. **Usar o que a casa já tem:** Fastify + Postgres + Vue em monorepo pnpm, deploy na VPS compartilhada (`iaprohub.vagas.noxlabs.com.br` até haver domínio próprio), Caddy e o padrão de `deploy/` do Agendia. A interface `WhatsAppTransport` de `~/dev/agendia/packages/whatsapp` serve de referência: basta criar um `EvolutionTransport` com a mesma forma (só leitura do Agendia).
 5. **Sem Redis.** A fila e os jobs agendados usam `pg-boss`, que roda sobre o próprio Postgres.
 
 ## 2. Arquitetura
@@ -412,7 +412,7 @@ Em todos os cenários a receita esperada (seção 8) cobre o custo. O maior cust
 
 ## 13. Decisões (respostas da pessoa em 18/11/2026)
 
-1. **Nome e endereço:** iaprohub-vagas, em **`iaprohub.vagas.aurora-saas.com.br`**. Por ter dois níveis abaixo de `aurora-saas.com.br`, esse endereço não é coberto por um `*.aurora-saas.com.br`: precisa de um registro DNS próprio (A ou CNAME para a VPS), e o Caddy emite o certificado sozinho. Fica de reserva: `iaprohubvagas.com.br` está livre (R$ 40/ano).
+1. **Nome e endereço:** iaprohub-vagas, em **`iaprohub.vagas.noxlabs.com.br`** (antes `iaprohub.vagas.aurora-saas.com.br`, que segue como alias durante a migração para a NoxLabs). Por ter dois níveis abaixo de `noxlabs.com.br`, esse endereço não é coberto por um `*.noxlabs.com.br`: precisa de um registro DNS próprio (A ou CNAME para a VPS), e o Caddy emite o certificado sozinho. Fica de reserva: `iaprohubvagas.com.br` está livre (R$ 40/ano).
 2. **Comunidade:** média para grande → planejar pelo **cenário B** (~100 mil páginas/mês) desde o início: cache nas páginas públicas e índices certos.
 3. **Nicho:** tech em geral (todas as áreas de tecnologia).
 4. **Recorte:** sem recorte geográfico. Entra o que for tech e tiver até 3 dias, e o agente da pessoa já faz esse filtro.
@@ -428,6 +428,6 @@ Em todos os cenários a receita esperada (seção 8) cobre o custo. O maior cust
 - Site: lista em cards no modelo da referência, busca, filtros em chip, página da vaga com JSON-LD, link curto `/v/:code`, sitemap.
 - Expiração automática em 21 dias.
 - Tela/rota "Resumo de hoje" com o texto pronto para copiar.
-- Deploy na VPS em `iaprohub.vagas.aurora-saas.com.br`.
+- Deploy na VPS em `iaprohub.vagas.noxlabs.com.br`.
 
 Ficam para depois: publicação por recrutador e moderação (Fase 2), anúncios (pedir o AdSense assim que o site estiver no ar) e o serviço pago (Fase 3, que substitui o antigo "banco de talentos").

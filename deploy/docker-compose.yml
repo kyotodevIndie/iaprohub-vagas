@@ -47,7 +47,8 @@ services:
       DIGEST_TIMES: ${DIGEST_TIMES:-09:10,12:10,17:10}
     networks: [default, proxy]
     labels:
-      caddy: ${DOMAIN}
+      # DOMAIN_ALIASES (opcional): hosts extras separados por espaço, servidos igual ao principal (proxy, sem redirect).
+      caddy: ${DOMAIN} ${DOMAIN_ALIASES:-}
       caddy.reverse_proxy: "{{upstreams 4000}}"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/health >/dev/null || exit 1"]

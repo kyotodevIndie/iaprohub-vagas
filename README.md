@@ -1,6 +1,6 @@
 # IAPro Vagas
 
-Hub de vagas de tecnologia da comunidade iaprohub: https://iaprohub.vagas.aurora-saas.com.br
+Hub de vagas de tecnologia da comunidade iaprohub: https://iaprohub.vagas.noxlabs.com.br
 
 O agente de coleta manda as vagas prontas pela API de ingestão ([docs/API.md](docs/API.md)). O site mostra a lista em cards, apaga cada vaga 21 dias depois de ela entrar e gera em `/admin/resumo` o texto do resumo para colar nos grupos de WhatsApp. O plano completo está em [docs/plano.md](docs/plano.md).
 

@@ -1,6 +1,6 @@
 # API de ingestão: IAPro Vagas
 
-Endereço: `https://iaprohub.vagas.aurora-saas.com.br`
+Endereço: `https://iaprohub.vagas.noxlabs.com.br`
 
 O agente de coleta manda as vagas já filtradas (tech, até 3 dias) e preenchidas. O site só guarda e mostra cada vaga, e a apaga 21 dias depois de ela entrar.
 
@@ -11,7 +11,7 @@ O agente de coleta manda as vagas já filtradas (tech, até 3 dias) e preenchida
 Para criar um token, use o token de admin:
 
 ```bash
-curl -X POST https://iaprohub.vagas.aurora-saas.com.br/api/v1/admin/clients \
+curl -X POST https://iaprohub.vagas.noxlabs.com.br/api/v1/admin/clients \
   -H "Authorization: Bearer $ADMIN_TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"gpt"}'
 ```
@@ -63,7 +63,7 @@ Resposta: um resultado por vaga, na mesma ordem.
 
 ```json
 { "results": [
-  { "index": 0, "status": "created", "id": "ne66553", "url": "https://iaprohub.vagas.aurora-saas.com.br/vagas/senior-back-end-developer-python-aws-acme-ne66553" },
+  { "index": 0, "status": "created", "id": "ne66553", "url": "https://iaprohub.vagas.noxlabs.com.br/vagas/senior-back-end-developer-python-aws-acme-ne66553" },
   { "index": 1, "status": "updated", "id": "r4fte7t", "url": "..." },
   { "index": 2, "status": "rejected", "errors": ["applyUrl: Invalid URL"] }
 ] }
