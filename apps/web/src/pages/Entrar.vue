@@ -3,8 +3,10 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { errorMessage, send } from "@/api";
 import { loadMe } from "@/lib/session";
 
@@ -17,10 +19,13 @@ const email = ref("");
 const code = ref("");
 const terms = ref(false);
 const error = ref("");
+const termsError = ref("");
 const busy = ref(false);
 
 async function requestCode() {
-  error.value = "";
+  error.value = /^\S+@\S+\.\S+$/.test(email.value.trim()) ? "" : "Informe um e-mail válido.";
+  termsError.value = terms.value ? "" : "Aceite a política de privacidade para continuar.";
+  if (error.value || termsError.value) return;
   busy.value = true;
   try {
     await send("POST", "/api/v1/auth/code", { email: email.value.trim() });
@@ -33,7 +38,8 @@ async function requestCode() {
 }
 
 async function verify() {
-  error.value = "";
+  error.value = /^\d{6}$/.test(code.value.trim()) ? "" : "Digite os 6 dígitos do código.";
+  if (error.value) return;
   busy.value = true;
   try {
     await send("POST", "/api/v1/auth/verify", { email: email.value.trim(), code: code.value.trim(), acceptTerms: true });
@@ -49,34 +55,42 @@ async function verify() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-md py-6">
-    <h1 class="text-2xl font-bold tracking-tight">Entrar</h1>
-    <p class="mt-1 text-muted-foreground">Sem senha: mandamos um código de 6 dígitos para o seu e-mail.</p>
+  <div class="mx-auto flex max-w-md flex-col gap-6 py-6">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Entrar</h1>
+      <p class="mt-1 text-sm text-muted-foreground">Sem senha: mandamos um código de 6 dígitos para o seu e-mail.</p>
+    </div>
 
-    <Card class="mt-6 p-5 shadow-none">
-      <form v-if="step === 'email'" class="space-y-4" @submit.prevent="requestCode">
-        <div class="space-y-1.5">
+    <Card class="gap-0 p-6 shadow-none">
+      <form v-if="step === 'email'" class="flex flex-col gap-4" novalidate @submit.prevent="requestCode">
+        <div class="flex flex-col gap-2">
           <Label for="email">E-mail</Label>
-          <Input id="email" v-model="email" type="email" required autocomplete="email" placeholder="voce@exemplo.com" />
+          <Input id="email" v-model="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" :aria-invalid="!!error || undefined" />
+          <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
         </div>
-        <label class="flex items-start gap-2 text-sm text-muted-foreground">
-          <input v-model="terms" type="checkbox" required class="mt-0.5 accent-[hsl(var(--primary))]" />
-          <span>Li e aceito a <RouterLink to="/privacidade" class="text-primary">política de privacidade e os termos de uso</RouterLink>.</span>
-        </label>
-        <Button type="submit" class="w-full" :disabled="busy || !terms">{{ busy ? "Enviando..." : "Receber código" }}</Button>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-start gap-2">
+            <Checkbox id="terms" v-model="terms" class="mt-0.5" :aria-invalid="!!termsError || undefined" />
+            <Label for="terms" class="block text-sm font-normal leading-snug text-muted-foreground">
+              Li e aceito a <RouterLink to="/privacidade" class="text-primary">política de privacidade e os termos de uso</RouterLink>.
+            </Label>
+          </div>
+          <p v-if="termsError" class="text-sm text-destructive">{{ termsError }}</p>
+        </div>
+        <Button type="submit" class="w-full" :disabled="busy"><Spinner v-if="busy" />Receber código</Button>
       </form>
 
-      <form v-else class="space-y-4" @submit.prevent="verify">
+      <form v-else class="flex flex-col gap-4" novalidate @submit.prevent="verify">
         <p class="text-sm">Mandamos o código para <b>{{ email }}</b>. Confira também o spam.</p>
-        <div class="space-y-1.5">
+        <div class="flex flex-col gap-2">
           <Label for="code">Código</Label>
-          <Input id="code" v-model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}" required placeholder="000000" class="text-center text-lg tracking-[0.4em]" />
+          <Input id="code" v-model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" class="h-10 text-center text-lg tracking-[0.4em]" :aria-invalid="!!error || undefined" />
+          <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
         </div>
-        <Button type="submit" class="w-full" :disabled="busy || code.length !== 6">{{ busy ? "Entrando..." : "Entrar" }}</Button>
-        <button type="button" class="w-full text-sm text-muted-foreground hover:text-foreground" @click="step = 'email'; code = ''">Usar outro e-mail</button>
+        <Button type="submit" class="w-full" :disabled="busy"><Spinner v-if="busy" />Entrar</Button>
+        <Button type="button" variant="ghost" class="w-full text-muted-foreground" @click="step = 'email'; code = ''; error = ''">Usar outro e-mail</Button>
       </form>
 
-      <p v-if="error" class="mt-3 text-sm text-destructive">{{ error }}</p>
     </Card>
   </div>
 </template>

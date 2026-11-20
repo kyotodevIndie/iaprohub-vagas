@@ -1,0 +1,41 @@
+/* Tema do IAPro Vagas: quase preto com o verde neon da logo. Só escuro, sem .dark. */
+:root {
+  --background: hsl(135 22% 5%);
+  --foreground: hsl(120 12% 95%);
+  --card: hsl(135 16% 9%);
+  --card-foreground: hsl(120 12% 95%);
+  --popover: hsl(135 16% 9%);
+  --popover-foreground: hsl(120 12% 95%);
+  --primary: hsl(106 88% 47%);
+  --primary-foreground: hsl(135 22% 5%);
+  --secondary: hsl(135 12% 14%);
+  --secondary-foreground: hsl(120 8% 78%);
+  --muted: hsl(135 12% 14%);
+  --muted-foreground: hsl(120 6% 64%);
+  --accent: hsl(135 12% 14%);
+  --accent-foreground: hsl(120 12% 95%);
+  --destructive: hsl(0 72% 60%);
+  --destructive-foreground: hsl(120 12% 95%);
+  --border: hsl(135 12% 17%);
+  --input: hsl(135 12% 22%);
+  --ring: hsl(106 88% 47%);
+
+  --chart-1: hsl(106 88% 47%);
+  --chart-2: hsl(160 70% 45%);
+  --chart-3: hsl(190 70% 50%);
+  --chart-4: hsl(45 90% 55%);
+  --chart-5: hsl(280 60% 65%);
+
+  --sidebar: hsl(135 16% 9%);
+  --sidebar-foreground: hsl(120 12% 95%);
+  --sidebar-primary: hsl(106 88% 47%);
+  --sidebar-primary-foreground: hsl(135 22% 5%);
+  --sidebar-accent: hsl(135 12% 14%);
+  --sidebar-accent-foreground: hsl(120 12% 95%);
+  --sidebar-border: hsl(135 12% 17%);
+  --sidebar-ring: hsl(106 88% 47%);
+
+  --radius: 0.75rem;
+  --font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}

@@ -44,7 +44,7 @@ services:
       EVOLUTION_URL: ${EVOLUTION_URL:-}
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
       EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-iapro}
-      DIGEST_HOUR: ${DIGEST_HOUR:-9}
+      DIGEST_TIMES: ${DIGEST_TIMES:-09:10,12:10,17:10}
     networks: [default, proxy]
     labels:
       caddy: ${DOMAIN}

@@ -102,13 +102,14 @@ export async function buildApp(db: Db, env: Env, opts: { mailer?: Mailer; whatsa
   // Resumo no grupo do WhatsApp: estado da conexão, grupos do número, grupo escolhido e últimos envios.
   app.get("/api/v1/admin/whatsapp", { preHandler: requireAdmin }, async () => {
     const { rows: sends } = await db.query(
-      `SELECT to_char(day, 'DD/MM') AS day, job_count AS "count", sent_at AS "sentAt", error FROM wa_digest ORDER BY day DESC LIMIT 7`,
+      `SELECT to_char(to_date(left(slot, 10), 'YYYY-MM-DD'), 'DD/MM') || ' ' || right(slot, 5) AS slot, job_count AS "count", sent_at AS "sentAt", error
+       FROM wa_digest ORDER BY slot DESC LIMIT 15`,
     );
     const groupJid = await getSetting(db, GROUP_SETTING);
     if (!wa) return { enabled: false, groupJid, groups: [], sends };
     try {
       const [state, groups] = await Promise.all([wa.state(), wa.groups()]);
-      return { enabled: true, state, groupJid, groups: groups.sort((a, b) => a.subject.localeCompare(b.subject)), sends, hour: env.evolution?.digestHour ?? 9 };
+      return { enabled: true, state, groupJid, groups: groups.sort((a, b) => a.subject.localeCompare(b.subject)), sends, times: env.evolution?.digestTimes ?? [] };
     } catch (err) {
       return { enabled: true, state: "erro", error: (err as Error).message, groupJid, groups: [], sends };
     }

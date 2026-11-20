@@ -4,7 +4,7 @@ import { buildApp } from "../src/app";
 import { createPool, runMigrations, type Db } from "../src/db";
 import type { Mail } from "../src/mail";
 import { matchNewJobs, sendApplications, sendDailyAlerts } from "../src/matching";
-import { sendDailyDigest, type WhatsApp } from "../src/whatsapp";
+import { msUntilNext, sendDigest, type WhatsApp } from "../src/whatsapp";
 
 // Schema próprio no mesmo banco de teste, para rodar em paralelo com api.test.ts.
 const base = process.env.TEST_DATABASE_URL ?? "postgres://vagas:vagas@localhost:5442/vagas_test";
@@ -191,23 +191,31 @@ describe.skipIf(!available)("Talentos Pro", () => {
     expect(apps.map((a: { channel: string; status: string }) => `${a.channel}:${a.status}`).sort()).toEqual(["alerta:enviado", "email:enviado"]);
   });
 
-  it("WhatsApp: só manda depois de escolher o grupo, uma vez por dia, a partir das 9h", async () => {
+  it("WhatsApp: só manda depois de escolher o grupo, uma vez por horário, com as vagas desde o envio anterior", async () => {
     const admin = { authorization: `Bearer ${ADMIN}` };
-    const at = (iso: string) => sendDailyDigest(db, fakeWa, "https://site.test", 9, new Date(iso));
+    const times = ["09:10", "12:10", "17:10"];
+    const at = (iso: string) => sendDigest(db, fakeWa, "https://site.test", times, new Date(iso));
+    expect(msUntilNext(times, new Date("2026-11-18T12:00:00Z"))).toBe(10 * 60_000); // 9h00 em SP
+    expect(msUntilNext(times, new Date("2026-11-18T20:10:00Z"))).toBe(16 * 3600_000); // 17h10 → 9h10
     expect(await at("2026-11-18T13:00:00Z")).toBeNull(); // sem grupo escolhido
     const info = (await app.inject({ url: "/api/v1/admin/whatsapp", headers: admin })).json();
     expect(info).toMatchObject({ enabled: true, state: "open", groupJid: null, groups: [{ id: "123@g.us" }] });
     expect((await app.inject({ method: "PUT", url: "/api/v1/admin/whatsapp", headers: admin, payload: { groupJid: "5585999@s.whatsapp.net" } })).statusCode).toBe(400);
     await app.inject({ method: "PUT", url: "/api/v1/admin/whatsapp", headers: admin, payload: { groupJid: "123@g.us" } });
 
-    expect(await at("2026-11-18T11:00:00Z")).toBeNull(); // 8h em SP
-    await db.query("UPDATE job SET first_seen_at = now()");
-    const sent = await at("2026-11-18T13:00:00Z");
-    expect(sent?.count).toBeGreaterThan(0);
+    expect(await at("2026-11-18T12:05:00Z")).toBeNull(); // 9h05 em SP, antes do primeiro horário
+    await db.query("UPDATE job SET first_seen_at = now() - interval '1 hour'");
+    const sent = await at("2026-11-18T12:15:00Z");
+    expect(sent).toMatchObject({ slot: "2026-11-18 09:10" });
+    expect(sent!.count).toBeGreaterThan(0);
     expect(waSent).toHaveLength(1);
     expect(waSent[0]!.to).toBe("123@g.us");
     expect(waSent[0]!.text).toContain("Vagas tech de hoje");
-    expect(await at("2026-11-18T20:00:00Z")).toBeNull(); // já saiu hoje
+    expect(await at("2026-11-18T13:00:00Z")).toBeNull(); // 9h10 já saiu
+    // 12h10: as mesmas vagas não vão de novo
+    expect(await at("2026-11-18T15:11:00Z")).toEqual({ slot: "2026-11-18 12:10", count: 0 });
+    expect(waSent).toHaveLength(1);
+    expect((await app.inject({ url: "/api/v1/admin/whatsapp", headers: admin })).json().sends[0]).toMatchObject({ slot: "18/11 12:10" });
 
     const manual = await app.inject({ method: "POST", url: "/api/v1/admin/whatsapp/send", headers: admin, payload: { hours: 24 } });
     expect(manual.json().sent).toBeGreaterThan(0);

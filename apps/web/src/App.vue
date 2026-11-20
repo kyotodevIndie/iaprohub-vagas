@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import SupportPix from "@/components/SupportPix.vue";
+import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/sonner";
 import { loadMe, me } from "@/lib/session";
 
 loadMe();
@@ -14,8 +16,8 @@ loadMe();
       </RouterLink>
       <nav class="ml-auto flex items-center gap-4 text-sm">
         <RouterLink v-if="me?.recruiterStatus === 'aprovado'" to="/recrutador" class="text-muted-foreground no-underline hover:text-foreground">Talentos</RouterLink>
-        <RouterLink v-if="me" to="/conta" class="font-medium text-foreground no-underline hover:text-primary">
-          Minha conta<span v-if="me.pro" class="ml-1.5 rounded-sm bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">Pro</span>
+        <RouterLink v-if="me" to="/conta" class="inline-flex items-center gap-1.5 font-medium text-foreground no-underline hover:text-primary">
+          Minha conta<Badge v-if="me.pro">Pro</Badge>
         </RouterLink>
         <RouterLink v-else-if="me === null" to="/entrar" class="font-medium text-primary no-underline hover:underline">Entrar</RouterLink>
       </nav>
@@ -29,4 +31,5 @@ loadMe();
     Vagas de tecnologia publicadas nos últimos dias. Cada vaga fica no ar por 3 semanas. A candidatura é feita no site da empresa.
     <RouterLink to="/privacidade" class="ml-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">Privacidade</RouterLink>
   </footer>
+  <Toaster />
 </template>

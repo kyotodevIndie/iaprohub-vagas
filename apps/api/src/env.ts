@@ -40,7 +40,12 @@ export const env = {
         url: process.env.EVOLUTION_URL.replace(/\/+$/, ""),
         apiKey: process.env.EVOLUTION_API_KEY,
         instance: process.env.EVOLUTION_INSTANCE ?? "iapro",
-        digestHour: Number(process.env.DIGEST_HOUR ?? 9),
+        // Horários do resumo em Brasília, 10 min depois de cada rodada do agente que publica as vagas.
+        digestTimes: (process.env.DIGEST_TIMES ?? "09:10,12:10,17:10")
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))
+          .sort(),
       }
     : null,
 };

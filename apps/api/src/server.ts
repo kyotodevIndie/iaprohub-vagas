@@ -4,7 +4,7 @@ import { env } from "./env";
 import { expireJobs } from "./ingest";
 import { createMailer } from "./mail";
 import { matchNewJobs, sendApplications, sendDailyAlerts } from "./matching";
-import { createWhatsApp, sendDailyDigest } from "./whatsapp";
+import { createWhatsApp, msUntilNext, sendDigest } from "./whatsapp";
 
 const db = createPool(env.databaseUrl);
 await runMigrations(db);
@@ -31,13 +31,6 @@ const pro = async () => {
     const sent = await sendApplications(db, mailer);
     const alerts = await sendDailyAlerts(db, mailer, env.publicUrl);
     if (matched || sent || alerts) app.log.info({ matched, sent, alerts }, "envio automático");
-    if (wa) {
-      const digest = await sendDailyDigest(db, wa, env.publicUrl, env.evolution!.digestHour).catch((err) => {
-        app.log.error(err, "falha no resumo do WhatsApp");
-        return null;
-      });
-      if (digest) app.log.info(digest, "resumo do WhatsApp");
-    }
   } catch (err) {
     app.log.error(err, "falha no envio automático");
   } finally {
@@ -47,9 +40,23 @@ const pro = async () => {
 const proTimer = setInterval(pro, 5 * 60 * 1000);
 setTimeout(pro, 10_000);
 
+// Resumo do WhatsApp: um timer para o próximo horário de DIGEST_TIMES. Ao subir, manda o horário que passou
+// enquanto o servidor estava fora (cada horário sai uma vez só).
+let digestTimer: NodeJS.Timeout | undefined;
+const digest = async () => {
+  const sent = await sendDigest(db, wa!, env.publicUrl, env.evolution!.digestTimes).catch((err) => {
+    app.log.error(err, "falha no resumo do WhatsApp");
+    return null;
+  });
+  if (sent) app.log.info(sent, "resumo do WhatsApp");
+  digestTimer = setTimeout(digest, msUntilNext(env.evolution!.digestTimes) + 1000);
+};
+if (wa && env.evolution!.digestTimes.length) setTimeout(digest, 15_000);
+
 const shutdown = async () => {
   clearInterval(timer);
   clearInterval(proTimer);
+  clearTimeout(digestTimer);
   await app.close();
   await db.end();
   process.exit(0);

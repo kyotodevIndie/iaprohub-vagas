@@ -7,7 +7,7 @@ O agente de coleta manda as vagas prontas pela API de ingestão ([docs/API.md](d
 ## Estrutura
 
 - `apps/api`: Fastify + Postgres. API de ingestão, API pública, páginas com meta tags e JSON-LD (Google for Jobs), link curto `/v/:code`, sitemap e a expiração (de hora em hora).
-- `apps/web`: Vue 3 + Vite + [nox-ui](https://github.com/kyotodevIndie/nox-ui) (preset do Tailwind e componentes em `src/components/ui`, tema em `src/theme.css`). Lista com busca, filtros e card de anúncio, página da vaga e tela do resumo.
+- `apps/web`: Vue 3 + Vite + Tailwind 4 + shadcn-vue (componentes em `src/components/ui`, tema em `src/styles/theme.css`, padrões em `~/dev/nox-design/padroes.md`). Lista com busca, filtros e card de anúncio, página da vaga e tela do resumo.
 - `deploy/`: imagem única (a API serve o build do site), compose com Postgres e backup, e o script de deploy.
 
 ## Rodar local
@@ -47,4 +47,4 @@ Precisa no `stack.env`: `RESEND_API_KEY` e `EMAIL_FROM` (login e envios) e `NOX_
 
 ## Resumo automático no WhatsApp
 
-Com `EVOLUTION_URL` e `EVOLUTION_API_KEY` no `stack.env` (Evolution em `~/dev/evolution`, instância `iapro`), o resumo das últimas 24h sai uma vez por dia a partir de `DIGEST_HOUR` (9h de Brasília) no grupo escolhido em `/admin/resumo`. Sem grupo escolhido, nada é enviado. A mesma tela tem o botão "Enviar agora".
+Com `EVOLUTION_URL` e `EVOLUTION_API_KEY` no `stack.env` (Evolution em `~/dev/evolution`, instância `iapro`), o resumo sai nos horários de `DIGEST_TIMES` (padrão 9h10, 12h10 e 17h10 de Brasília, 10 min depois de cada rodada do agente) no grupo escolhido em `/admin/resumo`, com as vagas que chegaram desde o envio anterior. Sem grupo escolhido, nada é enviado. A mesma tela tem o botão "Enviar agora".

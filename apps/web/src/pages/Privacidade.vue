@@ -4,7 +4,7 @@ document.title = "Política de privacidade | IAPro Vagas";
 
 <template>
   <article class="max-w-2xl space-y-4 leading-relaxed text-foreground/85">
-    <h1 class="text-2xl font-bold tracking-tight text-foreground">Política de privacidade e termos de uso</h1>
+    <h1 class="text-2xl font-semibold tracking-tight text-foreground">Política de privacidade e termos de uso</h1>
     <p class="text-sm text-muted-foreground">Atualizada em 18/11/2026.</p>
 
     <p>
