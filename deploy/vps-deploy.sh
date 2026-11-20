@@ -8,7 +8,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 HOST="${VAGAS_HOST:-saas-vps}"
 # /opt é do root nesta VPS e o usuário deploy não tem sudo; por isso a stack mora na home dele.
 DIR=${VAGAS_DIR:-/home/deploy/iaprohub-vagas}
-DOMAIN=${VAGAS_DOMAIN:-iaprohub.vagas.noxlabs.com.br}
+DOMAIN=${VAGAS_DOMAIN:-iapro.vagas.noxlabs.com.br}
 SHA="$(git rev-parse --short HEAD)"
 [ -z "$(git status --porcelain)" ] || { echo "Há mudanças não commitadas; commite antes." >&2; exit 1; }
 
