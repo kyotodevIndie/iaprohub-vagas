@@ -4,7 +4,7 @@ info:
   description: Publica vagas de tecnologia no IAPro Vagas. Mande só vagas de tecnologia com até 3 dias de publicação.
   version: 1.0.0
 servers:
-  - url: https://iaprohub.vagas.aurora-saas.com.br
+  - url: https://iapro.vagas.noxlabs.com.br
 paths:
   /api/v1/ingest/jobs:
     post:
