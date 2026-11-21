@@ -18,7 +18,7 @@ docker build -q -f deploy/Dockerfile -t "iaprohub-vagas:$SHA" . >/dev/null
 echo "→ enviando imagem"
 docker save "iaprohub-vagas:$SHA" | gzip -1 | ssh "$HOST" 'gunzip | docker load' >/dev/null
 ssh "$HOST" "mkdir -p $DIR/backups"
-scp -q deploy/docker-compose.yml "$HOST:$DIR/"
+scp -q deploy/docker-compose.yml deploy/docker-compose.redirect.yml "$HOST:$DIR/"
 
 ssh "$HOST" SHA="$SHA" DIR="$DIR" DOMAIN="$DOMAIN" bash -s <<'REMOTE'
 set -euo pipefail
@@ -31,6 +31,7 @@ fi
 sed -i "s/^TAG=.*/TAG=$SHA/" $ENV
 cd $DIR
 DC="docker compose -p iaprohub-vagas --env-file $ENV -f docker-compose.yml"
+grep -Eq '^REDIRECT_DOMAIN="?[^" ]' $ENV && DC="$DC -f docker-compose.redirect.yml"
 $DC up -d --remove-orphans
 health() { docker inspect -f '{{.State.Health.Status}}' "$1" 2>/dev/null || true; }
 for i in $(seq 1 40); do [ "$(health iaprohub-vagas-app-1)" = healthy ] && break; sleep 3; done
