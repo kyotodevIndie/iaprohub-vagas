@@ -1,0 +1,22 @@
+{
+  "name": "iaprohub-vagas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "migrate": "pnpm --filter @iaprohub-vagas/api migrate",
+    "dev:api": "pnpm --filter @iaprohub-vagas/api dev",
+    "dev:web": "pnpm --filter @iaprohub-vagas/web dev",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

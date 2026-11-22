@@ -1,0 +1,86 @@
+# Produção (stack "iaprohub-vagas"): Postgres próprio, o app (API + site) e o backup diário.
+# Variáveis em stack.env, na pasta da stack no servidor (chmod 600), nunca no git. Imagem enviada por SSH (deploy/vps-deploy.sh).
+name: iaprohub-vagas
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.5
+    environment:
+      POSTGRES_USER: vagas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: vagas
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vagas -d vagas"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  app:
+    image: iaprohub-vagas:${TAG:?}
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 1.0
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      NODE_OPTIONS: --max-old-space-size=160
+      DATABASE_URL: postgres://vagas:${POSTGRES_PASSWORD}@postgres:5432/vagas
+      PUBLIC_URL: https://${DOMAIN:?}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
+      ADSENSE_SLOT: ${ADSENSE_SLOT:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      NOX_URL: ${NOX_URL:-}
+      NOX_CLIENT_ID: ${NOX_CLIENT_ID:-}
+      NOX_SECRET: ${NOX_SECRET:-}
+      NOX_PRODUCT: ${NOX_PRODUCT:-iaprohub-vagas}
+      NOX_PLAN: ${NOX_PLAN:-pro}
+      EVOLUTION_URL: ${EVOLUTION_URL:-}
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-iapro}
+      DIGEST_TIMES: ${DIGEST_TIMES:-09:10,12:10,17:10}
+    networks: [default, proxy]
+    labels:
+      # DOMAIN_ALIASES (opcional): hosts extras separados por espaço, servidos igual ao principal (proxy, sem redirect).
+      caddy: ${DOMAIN} ${DOMAIN_ALIASES:-}
+      caddy.reverse_proxy: "{{upstreams 4000}}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 10
+
+  # Dump diário em backups/, na pasta da stack (guarda 14).
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    mem_limit: 64m
+    environment:
+      PGHOST: postgres
+      PGUSER: vagas
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [./backups:/backups]
+    depends_on:
+      postgres: { condition: service_healthy }
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/vagas-$$(date +%Y%m%d-%H%M).dump
+          pg_dump -Fc -d vagas > $$f.tmp && mv $$f.tmp $$f || rm -f $$f.tmp
+          ls -1t /backups/vagas-*.dump | tail -n +15 | xargs -r rm --
+          sleep 86400
+        done
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  pgdata:

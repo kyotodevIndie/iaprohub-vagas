@@ -1,0 +1,12 @@
+# Postgres de desenvolvimento (porta 5442 para não brigar com os outros projetos).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vagas
+      POSTGRES_PASSWORD: vagas
+      POSTGRES_DB: vagas
+    ports: ["5442:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+volumes:
+  pgdata:

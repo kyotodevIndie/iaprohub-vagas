@@ -1,0 +1,10 @@
+# Domínio antigo (REDIRECT_DOMAIN, hosts separados por espaço, entre aspas se forem vários): o site redireciona para o
+# DOMAIN mantendo o caminho, e /api continua em proxy ali mesmo (a Action do GPT e quem chama a API não seguem redirect).
+# Um host não pode estar aqui e em DOMAIN_ALIASES ao mesmo tempo. Só entra no deploy com a variável no stack.env.
+services:
+  app:
+    labels:
+      caddy_1: ${REDIRECT_DOMAIN:?}
+      caddy_1.@app.not.path: /api/*
+      caddy_1.redir: "@app https://${DOMAIN:?}{uri} permanent"
+      caddy_1.reverse_proxy: "{{upstreams 4000}}"

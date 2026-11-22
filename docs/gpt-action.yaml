@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: IAPro Vagas
+  description: Publica vagas de tecnologia no IAPro Vagas. Mande só vagas de tecnologia com até 3 dias de publicação.
+  version: 1.0.0
+servers:
+  - url: https://iapro.vagas.noxlabs.com.br
+paths:
+  /api/v1/ingest/jobs:
+    post:
+      operationId: publicarVagas
+      summary: Publica ou atualiza vagas (até 200 por chamada). A mesma combinação source.kind + source.externalId atualiza em vez de duplicar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobs]
+              properties:
+                jobs:
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  items: { $ref: "#/components/schemas/Job" }
+      responses:
+        "200":
+          description: Um resultado por vaga, na mesma ordem (created, updated ou rejected com os erros).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index: { type: integer }
+                        status: { type: string, enum: [created, updated, rejected] }
+                        id: { type: string }
+                        url: { type: string }
+                        errors: { type: array, items: { type: string } }
+  /api/v1/ingest/jobs/close:
+    post:
+      operationId: fecharVagas
+      summary: Tira do ar vagas que fecharam na fonte.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [source, externalIds]
+              properties:
+                source:
+                  type: object
+                  required: [kind]
+                  properties: { kind: { type: string } }
+                externalIds: { type: array, items: { type: string } }
+      responses:
+        "200":
+          description: Quantas vagas saíram do ar.
+          content:
+            application/json:
+              schema: { type: object, properties: { closed: { type: integer } } }
+  /api/v1/ingest/runs:
+    get:
+      operationId: ultimosEnvios
+      summary: As últimas chamadas deste token, com o motivo de cada vaga rejeitada.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        "200":
+          description: Lista de envios.
+          content:
+            application/json:
+              schema: { type: object, properties: { runs: { type: array, items: { type: object } } } }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  schemas:
+    Job:
+      type: object
+      required: [source, title, applyUrl]
+      properties:
+        source:
+          type: object
+          required: [kind]
+          description: De onde a vaga veio. Mande externalId (id da vaga na fonte) ou url.
+          properties:
+            kind: { type: string, description: "nome da fonte: gupy, greenhouse, lever, linkedin, programathor..." }
+            key: { type: string, description: "empresa ou board na fonte (opcional)" }
+            externalId: { type: string }
+            url: { type: string, format: uri }
+        title: { type: string, maxLength: 200 }
+        company:
+          type: object
+          required: [name]
+          properties:
+            name: { type: string, maxLength: 150 }
+            website: { type: string, format: uri }
+        description: { type: string, description: "texto puro, sem HTML; quebras de linha são mantidas" }
+        seniority: { type: array, items: { type: string, enum: [estagio, junior, pleno, senior, especialista, lideranca] } }
+        workplace: { type: array, items: { type: string, enum: [remoto, hibrido, presencial] } }
+        regime: { type: array, items: { type: string, enum: [clt, pj, estagio, cooperado, freelance, temporario, outro] } }
+        stack: { type: array, maxItems: 30, items: { type: string }, description: "tecnologias em minúsculas: react, node, aws..." }
+        location: { type: string, description: "como exibir: Brasil, São Paulo, SP, LatAm" }
+        salary:
+          type: object
+          properties:
+            min: { type: number }
+            max: { type: number }
+            currency: { type: string, default: BRL }
+            period: { type: string, enum: [month, year, day, hour], default: month }
+            text: { type: string, description: "quando não há número, ex.: A combinar" }
+        applyUrl: { type: string, format: uri, description: "link de candidatura" }
+        applyEmail: { type: string, format: email, description: "só quando a vaga pede o CV por e-mail" }
+        publishedAt: { type: string, format: date-time, description: "data de publicação na fonte, ISO 8601 com fuso" }
+security:
+  - bearer: []
